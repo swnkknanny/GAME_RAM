@@ -3,566 +3,1148 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Substation RAM & Asset Health Monitoring</title>
+  <title>Substation RAM & Asset Health Monitoring - Soft Pink Theme</title>
   
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            rosepink: {
+              50: '#fff1f2',
+              100: '#ffe4e6',
+              200: '#fecdd3',
+              300: '#fda4af',
+              400: '#fb7185',
+              500: '#f43f5e',
+              600: '#e11d48',
+              700: '#be123c',
+              800: '#9f1239',
+              900: '#881337',
+              950: '#4c0519',
+            },
+            blush: {
+              50: '#fdf8f8',
+              100: '#fbf0f2',
+              200: '#f7e1e6',
+              300: '#f2ccd6',
+              400: '#eaacc0',
+              500: '#de84a3',
+              600: '#ca6184',
+              700: '#ab496b',
+              800: '#8f3f5a',
+              900: '#79384e',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  
   <!-- Chart.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- Lucide Icons -->
+  <!-- Lucide Icons CDN -->
   <script src="https://unpkg.com/lucide@latest"></script>
   
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap');
-    body { font-family: 'Prompt', sans-serif; }
+    @import url('https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600&display=swap');
+    body { 
+      font-family: 'Prompt', 'Sarabun', sans-serif;
+      background: #faf5f6;
+    }
     input[type=number]::-webkit-inner-spin-button, 
     input[type=number]::-webkit-outer-spin-button { 
       opacity: 1;
     }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #fdf2f4;
+      border-radius: 9999px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #f4b0be;
+      border-radius: 9999px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #e28599;
+    }
   </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen pb-12">
+<body class="text-slate-700 min-h-screen pb-16">
 
-  <!-- Header -->
-  <header class="border-b border-slate-800 bg-slate-900/90 backdrop-blur sticky top-0 z-40">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-      <div class="flex items-center space-x-3">
-        <div class="p-2 bg-indigo-600/20 text-indigo-400 rounded-lg border border-indigo-500/30">
+  <!-- Top Navigation Bar -->
+  <header class="border-b border-rose-200/80 bg-white/85 backdrop-blur-md sticky top-0 z-40 shadow-sm shadow-rose-100/50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center space-x-3.5">
+        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-rose-400 to-pink-500 text-white flex items-center justify-center shadow-md shadow-rose-300/40">
           <i data-lucide="activity" class="w-6 h-6"></i>
         </div>
         <div>
-          <h1 class="text-base sm:text-lg font-bold">Substation RAM & Asset Intelligence</h1>
-          <p class="text-xs text-slate-400">ระบบประเมินความเชื่อถือได้และสุขภาพอุปกรณ์ไฟฟ้าแรงสูง</p>
+          <div class="flex items-center gap-2">
+            <h1 class="text-lg sm:text-xl font-bold text-slate-800 tracking-tight">Substation RAM & Health Diagnostic</h1>
+            <span class="bg-rose-100 text-rose-700 text-[11px] font-semibold px-2.5 py-0.5 rounded-full border border-rose-200">
+              Pink Pastel Edition
+            </span>
+          </div>
+          <p class="text-xs text-rose-500/90 font-normal">ระบบประเมินความเชื่อถือได้ (RAM) และการวินิจฉัยสภาพเชิงลึกสถานีไฟฟ้าแรงสูง</p>
         </div>
       </div>
 
-      <!-- Asset Switcher -->
-      <div class="flex items-center space-x-2">
-        <select id="asset-select" onchange="switchAsset()" class="bg-slate-800 border border-slate-700 text-slate-100 text-sm rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-          <option value="TX-01">Power Transformer (TX-01 115/22kV)</option>
-          <option value="GIS-01">Gas-Insulated Switchgear (GIS Bay-01)</option>
-        </select>
+      <!-- Asset Switcher & Preset Buttons -->
+      <div class="flex items-center gap-3">
+        <div class="flex items-center bg-rose-50 border border-rose-200 rounded-xl p-1 shadow-inner">
+          <button id="tab-tx" onclick="selectAsset('TX-01')" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 bg-white text-rose-700 shadow-sm border border-rose-200/60">
+            <i data-lucide="zap" class="w-3.5 h-3.5 text-rose-500"></i> หม้อแปลงไฟฟ้า (40 ค่า)
+          </button>
+          <button id="tab-gis" onclick="selectAsset('GIS-01')" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 text-slate-600 hover:text-rose-600">
+            <i data-lucide="shield" class="w-3.5 h-3.5"></i> สวิตช์เกียร์ GIS (30 ค่า)
+          </button>
+        </div>
+
+        <button onclick="openModal('modal-preset')" class="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium bg-rose-100/70 hover:bg-rose-200/80 text-rose-800 border border-rose-200 transition">
+          <i data-lucide="sparkles" class="w-3.5 h-3.5 text-rose-600"></i> โหลดชุดสถานการณ์จำลอง
+        </button>
       </div>
     </div>
   </header>
 
   <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 space-y-6">
 
-    <!-- Top Status Ribbon -->
+    <!-- Active Asset Header Banner -->
+    <div class="bg-gradient-to-r from-rose-100 via-pink-50 to-rose-100/60 border border-rose-200/80 rounded-2xl p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div class="space-y-1">
+        <div class="flex items-center gap-2">
+          <span id="asset-badge-type" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-500 text-white">Power Transformer</span>
+          <h2 id="asset-title" class="text-lg font-bold text-slate-800">TX-01 (115/22 kV 50 MVA Substation Unit)</h2>
+        </div>
+        <p id="asset-desc" class="text-xs text-slate-500">ระบบมอนิเตอร์ออนไลน์และผลตรวจวิเคราะห์จากห้องปฏิบัติการรวม 40 พารามิเตอร์</p>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2">
+        <button onclick="openModal('modal-asset-info')" class="px-3 py-1.5 bg-white hover:bg-rose-50 text-rose-700 border border-rose-300 rounded-xl text-xs font-medium flex items-center gap-1.5 shadow-sm transition">
+          <i data-lucide="info" class="w-3.5 h-3.5 text-rose-500"></i> ข้อมูลจำเพาะอุปกรณ์ (Nameplate)
+        </button>
+        <button onclick="openModal('modal-calc-formula')" class="px-3 py-1.5 bg-white hover:bg-rose-50 text-rose-700 border border-rose-300 rounded-xl text-xs font-medium flex items-center gap-1.5 shadow-sm transition">
+          <i data-lucide="file-text" class="w-3.5 h-3.5 text-rose-500"></i> สูตรคำนวณ RAM & HI
+        </button>
+      </div>
+    </div>
+
+    <!-- Top KPI Cards (Pink Pastel Cards) -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex items-center justify-between">
-        <div>
-          <p class="text-xs text-slate-400">สถานะการทำงาน</p>
-          <p id="top-status-badge" class="text-lg font-bold text-emerald-400 mt-0.5">ปกติ (Normal)</p>
-        </div>
-        <div class="p-2.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-          <i data-lucide="shield-check" class="w-5 h-5"></i>
-        </div>
-      </div>
-
-      <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex items-center justify-between">
-        <div>
-          <p class="text-xs text-slate-400">Health Index (คำนวณสด)</p>
-          <p id="top-hi-val" class="text-2xl font-bold text-indigo-400 mt-0.5">88.5%</p>
-        </div>
-        <button onclick="openModal('modal-hi')" class="text-xs text-indigo-400 hover:text-indigo-300 underline flex items-center gap-1">
-          ดูเกณฑ์ <i data-lucide="external-link" class="w-3 h-3"></i>
-        </button>
-      </div>
-
-      <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex items-center justify-between">
-        <div>
-          <p class="text-xs text-slate-400">อัตราความพร้อม (Availability)</p>
-          <p id="top-avail-val" class="text-2xl font-bold text-cyan-400 mt-0.5">99.94%</p>
-        </div>
-        <div class="p-2.5 rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
-          <i data-lucide="gauge" class="w-5 h-5"></i>
+      <!-- Availability -->
+      <div class="bg-white border border-rose-200/70 p-5 rounded-2xl shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+        <div class="absolute -right-3 -top-3 w-16 h-16 bg-rose-50 rounded-full group-hover:scale-110 transition-transform -z-0"></div>
+        <div class="relative z-10">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold px-2.5 py-0.5 rounded-md bg-rose-100 text-rose-700 border border-rose-200">
+              Availability (A)
+            </span>
+            <span class="text-[11px] text-slate-400">เป้าหมาย ≥ 99.5%</span>
+          </div>
+          <div class="mt-3">
+            <span id="kpi-avail" class="text-3xl font-extrabold text-rose-600 tracking-tight">99.943 %</span>
+            <p id="kpi-avail-sub" class="text-xs text-slate-500 mt-1">ความพร้อมจ่ายไฟฟ้า (Operational)</p>
+          </div>
         </div>
       </div>
 
-      <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex items-center justify-between">
-        <div>
-          <p class="text-xs text-slate-400">ประวัติความเสียหาย (Failures)</p>
-          <p id="top-fail-val" class="text-2xl font-bold text-amber-400 mt-0.5">1 ครั้ง</p>
+      <!-- Health Index -->
+      <div class="bg-white border border-rose-200/70 p-5 rounded-2xl shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+        <div class="absolute -right-3 -top-3 w-16 h-16 bg-pink-50 rounded-full group-hover:scale-110 transition-transform -z-0"></div>
+        <div class="relative z-10">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold px-2.5 py-0.5 rounded-md bg-pink-100 text-pink-700 border border-pink-200">
+              Asset Health Index
+            </span>
+            <span id="kpi-hi-status" class="text-[11px] font-bold text-emerald-600">สภาพดีมาก</span>
+          </div>
+          <div class="mt-3">
+            <span id="kpi-hi" class="text-3xl font-extrabold text-pink-600 tracking-tight">91.4 %</span>
+            <p id="kpi-hi-sub" class="text-xs text-slate-500 mt-1">คำนวณสดจากพารามิเตอร์ทั้งหมด</p>
+          </div>
         </div>
-        <button onclick="openModal('modal-failures')" class="text-xs text-amber-400 hover:text-amber-300 underline flex items-center gap-1">
-          ดูประวัติ <i data-lucide="list" class="w-3 h-3"></i>
-        </button>
+      </div>
+
+      <!-- MTBF / Reliability -->
+      <div class="bg-white border border-rose-200/70 p-5 rounded-2xl shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+        <div class="absolute -right-3 -top-3 w-16 h-16 bg-rose-50 rounded-full group-hover:scale-110 transition-transform -z-0"></div>
+        <div class="relative z-10">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold px-2.5 py-0.5 rounded-md bg-rose-100 text-rose-700 border border-rose-200">
+              Reliability (MTBF)
+            </span>
+            <span id="kpi-lambda" class="text-[11px] text-slate-500">λ = 0.000114</span>
+          </div>
+          <div class="mt-3">
+            <span id="kpi-mtbf" class="text-3xl font-extrabold text-slate-800 tracking-tight">8,760 ชม.</span>
+            <p class="text-xs text-slate-500 mt-1">ระยะเวลาเฉลี่ยก่อนเกิดเหตุขัดข้อง</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- MTTR / Maintainability -->
+      <div class="bg-white border border-rose-200/70 p-5 rounded-2xl shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+        <div class="absolute -right-3 -top-3 w-16 h-16 bg-pink-50 rounded-full group-hover:scale-110 transition-transform -z-0"></div>
+        <div class="relative z-10">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold px-2.5 py-0.5 rounded-md bg-pink-100 text-pink-700 border border-pink-200">
+              Maintainability (MTTR)
+            </span>
+            <span id="kpi-failures-count" class="text-[11px] font-medium text-amber-600">ขัดข้อง 1 ครั้ง</span>
+          </div>
+          <div class="mt-3">
+            <span id="kpi-mttr" class="text-3xl font-extrabold text-rose-700 tracking-tight">5.0 ชม.</span>
+            <p id="kpi-downtime-total" class="text-xs text-slate-500 mt-1">เวลารวมหยุดซ่อม: 5.0 ชม.</p>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- Main Content Grid: Live Input Panel & Results -->
+    <!-- RAM Interactive Controller & Real-Time Calculation -->
+    <div class="bg-white border border-rose-200/80 rounded-2xl p-5 shadow-sm space-y-4">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-rose-100 pb-3">
+        <div class="flex items-center gap-2">
+          <div class="p-2 rounded-lg bg-rose-100 text-rose-600">
+            <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="text-sm font-bold text-slate-800">แผงปรับแต่งพารามิเตอร์ปฏิบัติการ & คำนวณ RAM (Live RAM Calculator)</h3>
+            <p class="text-xs text-slate-500">พิมพ์แก้ไขตัวเลขเพื่อดูการเปลี่ยนแปลงของ MTBF, MTTR และ Availability ทันที</p>
+          </div>
+        </div>
+        <button onclick="resetAssetData()" class="self-start sm:self-auto text-xs px-3 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 transition font-medium flex items-center gap-1">
+          <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> คืนค่าเริ่มต้นของอุปกรณ์
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+        <div class="bg-rose-50/50 p-3.5 rounded-xl border border-rose-200/60">
+          <label class="block font-medium text-slate-700 mb-1 flex justify-between">
+            <span>ชั่วโมงทำงานสะสม (T)</span>
+            <span class="text-rose-600 font-bold">ชม.</span>
+          </label>
+          <input type="number" id="input-ram-op" oninput="handleRAMInput()" class="w-full bg-white border border-rose-200 rounded-lg px-3 py-1.5 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-400">
+          <p class="text-[10px] text-slate-400 mt-1">Operational Running Time</p>
+        </div>
+
+        <div class="bg-rose-50/50 p-3.5 rounded-xl border border-rose-200/60">
+          <label class="block font-medium text-slate-700 mb-1 flex justify-between">
+            <span>จำนวนครั้งที่ขัดข้อง (Failures : N)</span>
+            <span class="text-rose-600 font-bold">ครั้ง</span>
+          </label>
+          <input type="number" id="input-ram-failures" min="0" oninput="handleRAMInput()" class="w-full bg-white border border-rose-200 rounded-lg px-3 py-1.5 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-400">
+          <p class="text-[10px] text-slate-400 mt-1">Unplanned Outage Events</p>
+        </div>
+
+        <div class="bg-rose-50/50 p-3.5 rounded-xl border border-rose-200/60">
+          <label class="block font-medium text-slate-700 mb-1 flex justify-between">
+            <span>เวลารวมที่ใช้แก้ไข/หยุดซ่อม (Downtime)</span>
+            <span class="text-rose-600 font-bold">ชม.</span>
+          </label>
+          <input type="number" id="input-ram-repair" step="0.1" min="0" oninput="handleRAMInput()" class="w-full bg-white border border-rose-200 rounded-lg px-3 py-1.5 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-400">
+          <p class="text-[10px] text-slate-400 mt-1">Total Corrective Repair Time</p>
+        </div>
+
+        <div class="bg-rose-50/50 p-3.5 rounded-xl border border-rose-200/60">
+          <label class="block font-medium text-slate-700 mb-1 flex justify-between">
+            <span>เวลาซ่อมบำรุงตามแผน (Planned PM)</span>
+            <span class="text-rose-600 font-bold">ชม./ปี</span>
+          </label>
+          <input type="number" id="input-ram-pm" step="0.5" min="0" oninput="handleRAMInput()" class="w-full bg-white border border-rose-200 rounded-lg px-3 py-1.5 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-400">
+          <p class="text-[10px] text-slate-400 mt-1">Scheduled Maintenance Window</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chart & RAM History Section -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-      <!-- Column 1: Live Parameter Editor (พิมพ์/กรอกตัวเลขได้) -->
-      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-5">
-        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+      
+      <!-- Trend Line Chart (Soft Pink / Rose Theme) -->
+      <div class="lg:col-span-2 bg-white border border-rose-200/80 rounded-2xl p-5 shadow-sm space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-rose-100 pb-3">
           <div>
-            <h2 class="text-sm font-bold text-white flex items-center gap-2">
-              <i data-lucide="sliders" class="w-4 h-4 text-indigo-400"></i>
-              ปรับแต่งพารามิเตอร์ (Live Input)
-            </h2>
-            <p class="text-xs text-slate-400">พิมพ์เปลี่ยนตัวเลขเพื่อคำนวณ RAM & HI ทันที</p>
-          </div>
-          <button onclick="resetToDefaults()" class="text-xs px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700">
-            รีเซ็ต
-          </button>
-        </div>
-
-        <!-- Operational & RAM Inputs -->
-        <div class="space-y-3">
-          <h3 class="text-xs font-semibold text-indigo-400 uppercase tracking-wider">1. ข้อมูลการปฏิบัติการ (RAM Inputs)</h3>
-          
-          <div>
-            <label class="text-xs text-slate-300 flex justify-between mb-1">
-              <span>ชั่วโมงทำงานสะสม (T: Operating Hours)</span>
-              <span class="text-slate-400 text-[10px]">ชม.</span>
-            </label>
-            <input type="number" id="input-op-hours" oninput="recalculateAll()" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-          </div>
-
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="text-xs text-slate-300 block mb-1">จำนวนครั้งขัดข้อง (N)</label>
-              <input type="number" id="input-failures" min="0" oninput="recalculateAll()" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-            </div>
-            <div>
-              <label class="text-xs text-slate-300 block mb-1">เวลารวมที่ใช้ซ่อม (ชม.)</label>
-              <input type="number" id="input-repair-time" step="0.5" min="0" oninput="recalculateAll()" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-            </div>
-          </div>
-        </div>
-
-        <!-- Condition Diagnostics Inputs (Dynamic per Asset) -->
-        <div class="space-y-3 pt-3 border-t border-slate-800">
-          <h3 id="condition-input-title" class="text-xs font-semibold text-indigo-400 uppercase tracking-wider">2. ผลตรวจวัดสภาพ (Diagnostics)</h3>
-          
-          <div id="dynamic-condition-inputs" class="space-y-3">
-            <!-- Injected by JavaScript based on TX or GIS -->
-          </div>
-        </div>
-      </div>
-
-      <!-- Column 2 & 3: Real-time Calculated RAM & Diagnostic Status -->
-      <div class="lg:col-span-2 space-y-6">
-
-        <!-- Computed RAM Cards -->
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div class="bg-slate-900/90 border border-slate-800 p-4 rounded-xl">
-            <span class="text-xs font-medium text-slate-400">Mean Time Between Failures</span>
-            <p id="calc-mtbf" class="text-2xl font-bold text-emerald-400 mt-1">8,760 ชม.</p>
-            <p id="calc-lambda" class="text-[11px] text-slate-400 mt-1">&lambda; = 0.000114 ครั้ง/ชม.</p>
-          </div>
-
-          <div class="bg-slate-900/90 border border-slate-800 p-4 rounded-xl">
-            <span class="text-xs font-medium text-slate-400">Mean Time To Repair</span>
-            <p id="calc-mttr" class="text-2xl font-bold text-amber-400 mt-1">5.0 ชม.</p>
-            <p class="text-[11px] text-slate-400 mt-1">เฉลี่ยต่อเหตุการณ์ขัดข้อง</p>
-          </div>
-
-          <div class="bg-slate-900/90 border border-slate-800 p-4 rounded-xl">
-            <span class="text-xs font-medium text-slate-400">Operational Availability</span>
-            <p id="calc-avail" class="text-2xl font-bold text-cyan-400 mt-1">99.943 %</p>
-            <p id="calc-downtime" class="text-[11px] text-slate-400 mt-1">Downtime รวม: 5.0 ชม.</p>
-          </div>
-        </div>
-
-        <!-- Chart Section -->
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5">
-          <div class="flex items-center justify-between mb-4">
-            <div>
-              <h3 class="text-sm font-bold text-white">แนวโน้ม Availability และ Failure Rate ย้อนหลัง</h3>
-              <p class="text-xs text-slate-400">จำลองข้อมูลย้อนหลัง 6 เดือนสำหรับประเมินแนวโน้มความเสื่อมสภาพ</p>
-            </div>
-            <button onclick="openModal('modal-chart-detail')" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1.5 rounded-lg border border-slate-700 flex items-center gap-1.5">
-              <i data-lucide="maximize-2" class="w-3.5 h-3.5"></i> ดูตารางข้อมูล
-            </button>
-          </div>
-          <div class="h-60">
-            <canvas id="ramChart"></canvas>
-          </div>
-        </div>
-
-        <!-- Detailed Condition Analysis Table -->
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5">
-          <div class="flex items-center justify-between mb-3">
-            <h3 class="text-sm font-bold text-white flex items-center gap-2">
-              <i data-lucide="clipboard-check" class="w-4 h-4 text-emerald-400"></i>
-              การวิเคราะห์สภาพตามเกณฑ์มาตรฐาน (Condition Assessment)
+            <h3 class="text-sm font-bold text-slate-800 flex items-center gap-1.5">
+              <i data-lucide="trending-up" class="w-4 h-4 text-rose-500"></i> แนวโน้ม Availability ย้อนหลัง 6 เดือน
             </h3>
-            <button onclick="openModal('modal-standards')" class="text-xs text-indigo-400 hover:underline">
-              ดูเกณฑ์มาตรฐาน IEEE/IEC
-            </button>
+            <p class="text-xs text-slate-500">เส้นกราฟจำลองอัตราความพร้อมจ่ายไฟฟ้าในแต่ละเดือน</p>
           </div>
+          <div class="flex items-center gap-2">
+            <span class="flex items-center gap-1 text-[11px] text-rose-700 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200">
+              <span class="w-2 h-2 rounded-full bg-rose-500"></span> Availability %
+            </span>
+          </div>
+        </div>
+        <div class="h-64">
+          <canvas id="ramTrendChart"></canvas>
+        </div>
+      </div>
 
-          <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs">
-              <thead class="bg-slate-800/60 text-slate-300">
-                <tr>
-                  <th class="p-2.5 rounded-l-lg">พารามิเตอร์</th>
-                  <th class="p-2.5">ค่าปัจจุบัน</th>
-                  <th class="p-2.5">เกณฑ์ปกติ</th>
-                  <th class="p-2.5">การประเมิน</th>
-                  <th class="p-2.5 rounded-r-lg text-right">การจัดการ</th>
-                </tr>
-              </thead>
-              <tbody id="condition-table-body" class="divide-y divide-slate-800">
-                <!-- Rows injected dynamically -->
-              </tbody>
-            </table>
+      <!-- Quick Health Radar / Category Breakdown -->
+      <div class="bg-white border border-rose-200/80 rounded-2xl p-5 shadow-sm flex flex-col justify-between space-y-4">
+        <div>
+          <div class="flex items-center justify-between border-b border-rose-100 pb-3">
+            <h3 class="text-sm font-bold text-slate-800 flex items-center gap-1.5">
+              <i data-lucide="pie-chart" class="w-4 h-4 text-pink-500"></i> สรุปสถานะตามหมวดหมู่
+            </h3>
+            <span id="param-count-badge" class="text-xs font-bold px-2 py-0.5 bg-rose-100 text-rose-700 rounded-full">40 พารามิเตอร์</span>
+          </div>
+          <div id="category-summary-list" class="space-y-2.5 mt-3 text-xs">
+            <!-- Dynamic Category Health Scores -->
           </div>
         </div>
 
-      </div>
-
-    </div>
-  </main>
-
-  <!-- ================= MODALS / POPUPS ================= -->
-
-  <!-- Modal 1: Health Index Criteria -->
-  <div id="modal-hi" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 space-y-4">
-      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-        <h3 class="font-bold text-base text-white">เกณฑ์การคำนวณ Health Index (HI)</h3>
-        <button onclick="closeModal('modal-hi')" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
-      </div>
-      <div class="text-xs text-slate-300 space-y-3">
-        <p>ดัชนีสุขภาพคำนวณจากการถ่วงน้ำหนัก (Weighted Score) พารามิเตอร์สำคัญของอุปกรณ์:</p>
-        <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 space-y-1.5">
-          <p><span class="font-semibold text-indigo-400">Power Transformer:</span> DGA (40%), ความชื้นในน้ำมัน (25%), ค่า Dielectric Breakdown (20%), อุณหภูมิ Winding (15%)</p>
-          <p><span class="font-semibold text-emerald-400">GIS:</span> แรงดันก๊าซ SF₆ (45%), ระดับ Partial Discharge (30%), ความชื้น SF₆ (15%), สถิติ CB Operation (10%)</p>
+        <div class="p-3 bg-rose-50/70 border border-rose-200/60 rounded-xl text-xs text-slate-600 flex items-center justify-between">
+          <span>รอบตรวจสอบใหญ่ (Major Overhaul):</span>
+          <span class="font-bold text-rose-700">พ.ย. 2027 (อีก 15 เดือน)</span>
         </div>
-        <p class="text-slate-400">• HI &gt; 85%: สภาพดีมาก (Good)<br>• 70% - 85%: สภาพยอมรับได้ เฝ้าระวัง (Moderate)<br>• &lt; 70%: สภาพวิกฤต ต้องวางแผนบำรุงรักษาเร่งด่วน (Poor)</p>
       </div>
-      <div class="text-right">
-        <button onclick="closeModal('modal-hi')" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold">ปิดหน้าต่าง</button>
-      </div>
-    </div>
-  </div>
 
-  <!-- Modal 2: Failure Log -->
-  <div id="modal-failures" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-xl w-full p-6 space-y-4">
-      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-        <h3 class="font-bold text-base text-white">บันทึกประวัติการขัดข้องและหยุดซ่อม (Outage & Failure Logs)</h3>
-        <button onclick="closeModal('modal-failures')" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+    </div>
+
+    <!-- Diagnostic Parameters Section (40 for Transformer / 30 for GIS) -->
+    <div class="bg-white border border-rose-200/80 rounded-2xl p-5 shadow-sm space-y-4">
+      
+      <!-- Filter and Search Header -->
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-rose-100 pb-4">
+        <div>
+          <div class="flex items-center gap-2">
+            <h3 id="table-section-title" class="text-base font-bold text-slate-800">
+              รายการพารามิเตอร์ผลตรวจวัดเชิงลึก (40 พารามิเตอร์)
+            </h3>
+            <span class="text-xs bg-rose-100 text-rose-700 font-semibold px-2 py-0.5 rounded-md border border-rose-200">
+              พิมพ์เปลี่ยนค่าได้ทุกช่อง
+            </span>
+          </div>
+          <p class="text-xs text-slate-500">คลิกที่แถวหรือกดไอคอนดู เพื่อเปิดดูคำอธิบายทางวิศวกรรม มาตรฐานอ้างอิง และกราฟจำลอง</p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+          <!-- Search box -->
+          <div class="relative">
+            <i data-lucide="search" class="w-3.5 h-3.5 text-rose-400 absolute left-3 top-2.5"></i>
+            <input type="text" id="search-param" oninput="filterParameters()" placeholder="ค้นหาพารามิเตอร์ (เช่น H2, SF6, Temp)..." class="pl-8 pr-3 py-1.5 bg-rose-50/60 border border-rose-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-rose-400 w-48 sm:w-64">
+          </div>
+
+          <!-- Category filter dropdown -->
+          <select id="filter-category" onchange="filterParameters()" class="bg-rose-50/60 border border-rose-200 rounded-xl px-3 py-1.5 text-xs text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-rose-400">
+            <option value="ALL">ทั้งหมดทุกหมวดหมู่</option>
+          </select>
+        </div>
       </div>
-      <div class="text-xs overflow-y-auto max-h-60">
-        <table class="w-full text-left">
-          <thead class="bg-slate-800 text-slate-300">
-            <tr>
-              <th class="p-2">วันที่</th>
-              <th class="p-2">สาเหตุ</th>
-              <th class="p-2">เวลาซ่อม (ชม.)</th>
-              <th class="p-2">สถานะ</th>
+
+      <!-- Parameter Table -->
+      <div class="overflow-x-auto custom-scrollbar">
+        <table class="w-full text-left text-xs">
+          <thead>
+            <tr class="bg-rose-50/80 text-rose-900 border-b border-rose-200">
+              <th class="py-3 px-3 rounded-l-xl font-bold w-12 text-center">#</th>
+              <th class="py-3 px-3 font-bold">พารามิเตอร์ & ตัวชี้วัด</th>
+              <th class="py-3 px-3 font-bold">หมวดหมู่ (Category)</th>
+              <th class="py-3 px-3 font-bold w-40">ค่าที่วัดได้ (พิมพ์แก้ไขได้)</th>
+              <th class="py-3 px-3 font-bold">เกณฑ์มาตรฐาน (Threshold)</th>
+              <th class="py-3 px-3 font-bold text-center">สถานะ</th>
+              <th class="py-3 px-3 rounded-r-xl font-bold text-center w-24">รายละเอียด</th>
             </tr>
           </thead>
-          <tbody id="modal-failure-rows" class="divide-y divide-slate-800">
-            <!-- Dynamic rows -->
+          <tbody id="param-table-body" class="divide-y divide-rose-100">
+            <!-- Dynamically Rendered 40 or 30 rows -->
           </tbody>
         </table>
       </div>
-      <div class="text-right">
-        <button onclick="closeModal('modal-failures')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs">ปิด</button>
+
+      <!-- Pagination / Count Footer -->
+      <div class="flex items-center justify-between text-xs text-slate-500 pt-2 border-t border-rose-100">
+        <span id="param-shown-count">แสดง 40 จาก 40 รายการ</span>
+        <span class="text-rose-500 font-medium">เกณฑ์อ้างอิง: IEEE C57 / IEC 60599 / IEC 62271</span>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- ==================== MODALS & DETAIL DRAWERS ==================== -->
+
+  <!-- Modal 1: Parameter Drilldown Detail Modal -->
+  <div id="modal-param-detail" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white border border-rose-200 rounded-3xl max-w-xl w-full p-6 space-y-4 shadow-xl">
+      <div class="flex items-start justify-between border-b border-rose-100 pb-3">
+        <div>
+          <span id="modal-param-cat" class="text-[11px] font-bold uppercase tracking-wider text-rose-600 bg-rose-50 px-2 py-0.5 rounded border border-rose-200">Category</span>
+          <h3 id="modal-param-title" class="font-bold text-base text-slate-800 mt-1">Parameter Name</h3>
+        </div>
+        <button onclick="closeModal('modal-param-detail')" class="text-slate-400 hover:text-rose-600 p-1 rounded-lg transition"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div class="bg-rose-50/60 p-4 rounded-2xl border border-rose-200/80 space-y-2">
+          <div class="flex justify-between items-center">
+            <span class="text-slate-600">ค่าปัจจุบันที่ตรวจพบ:</span>
+            <span id="modal-param-val" class="text-base font-bold text-rose-700">--</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-slate-600">เกณฑ์มาตรฐานความปลอดภัย:</span>
+            <span id="modal-param-standard" class="font-semibold text-slate-800">--</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-slate-600">สถานะการประเมิน:</span>
+            <span id="modal-param-badge" class="px-2 py-0.5 rounded text-[11px] font-bold">--</span>
+          </div>
+        </div>
+
+        <div>
+          <h4 class="font-bold text-slate-700 mb-1">คำอธิบายและความสำคัญทางวิศวกรรม:</h4>
+          <p id="modal-param-desc" class="text-slate-600 leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-200">
+            --
+          </p>
+        </div>
+
+        <div>
+          <h4 class="font-bold text-slate-700 mb-1">ข้อเสนอแนะในการบำรุงรักษา (Recommended Action):</h4>
+          <p id="modal-param-action" class="text-rose-700 font-medium bg-rose-50/50 p-3 rounded-xl border border-rose-200">
+            --
+          </p>
+        </div>
+      </div>
+
+      <div class="flex justify-end pt-2">
+        <button onclick="closeModal('modal-param-detail')" class="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-xl text-xs font-semibold shadow-md shadow-rose-200 transition">
+          ปิดหน้าต่าง
+        </button>
       </div>
     </div>
   </div>
 
-  <!-- Modal 3: Historical Table Detail -->
-  <div id="modal-chart-detail" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 space-y-4">
-      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-        <h3 class="font-bold text-base text-white">ตารางข้อมูล RAM รายเดือน (6 เดือนย้อนหลัง)</h3>
-        <button onclick="closeModal('modal-chart-detail')" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+  <!-- Modal 2: Preset Scenarios -->
+  <div id="modal-preset" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white border border-rose-200 rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-xl">
+      <div class="flex items-center justify-between border-b border-rose-100 pb-3">
+        <div class="flex items-center gap-2">
+          <div class="p-2 rounded-lg bg-rose-100 text-rose-600"><i data-lucide="sparkles" class="w-5 h-5"></i></div>
+          <div>
+            <h3 class="font-bold text-base text-slate-800">เลือกชุดสถานการณ์จำลอง (Preset Scenarios)</h3>
+            <p class="text-xs text-slate-500">ทดสอบผลลัพธ์ของค่า RAM และ Health Index ภายใต้สภาวะต่างๆ</p>
+          </div>
+        </div>
+        <button onclick="closeModal('modal-preset')" class="text-slate-400 hover:text-rose-600"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
-      <table class="w-full text-xs text-left">
-        <thead class="bg-slate-800 text-slate-300">
-          <tr>
-            <th class="p-2">เดือน</th>
-            <th class="p-2">Availability (%)</th>
-            <th class="p-2">Downtime (ชม.)</th>
-            <th class="p-2">MTTR (ชม.)</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-slate-800 text-slate-300">
-          <tr><td class="p-2">มีนาคม 2026</td><td class="p-2">99.88%</td><td class="p-2">0.9</td><td class="p-2">0.9</td></tr>
-          <tr><td class="p-2">เมษายน 2026</td><td class="p-2">99.92%</td><td class="p-2">0.6</td><td class="p-2">0.6</td></tr>
-          <tr><td class="p-2">พฤษภาคม 2026</td><td class="p-2">99.85%</td><td class="p-2">1.1</td><td class="p-2">1.1</td></tr>
-          <tr><td class="p-2">มิถุนายน 2026</td><td class="p-2">99.96%</td><td class="p-2">0.3</td><td class="p-2">0.3</td></tr>
-          <tr><td class="p-2">กรกฎาคม 2026</td><td class="p-2">99.91%</td><td class="p-2">0.7</td><td class="p-2">0.7</td></tr>
-          <tr><td class="p-2">สิงหาคม 2026</td><td class="p-2">99.94%</td><td class="p-2">0.4</td><td class="p-2">0.4</td></tr>
-        </tbody>
-      </table>
-      <div class="text-right">
-        <button onclick="closeModal('modal-chart-detail')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs">ปิด</button>
+
+      <div class="space-y-2.5 text-xs">
+        <button onclick="applyPreset('ideal')" class="w-full text-left p-3.5 rounded-2xl border border-rose-200 hover:border-rose-400 hover:bg-rose-50/60 transition group">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-slate-800 group-hover:text-rose-700">1. อุปกรณ์ใหม่ สภาพสมบูรณ์สูงสุด (Ideal / Commissioning)</span>
+            <span class="text-emerald-600 font-semibold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">HI 99.5%</span>
+          </div>
+          <p class="text-slate-500 mt-1 text-[11px]">ทุกพารามิเตอร์อยู่ในเกณฑ์ดีเยี่ยม ไม่มีประวัติการขัดข้อง (A = 100%)</p>
+        </button>
+
+        <button onclick="applyPreset('thermal_warning')" class="w-full text-left p-3.5 rounded-2xl border border-rose-200 hover:border-rose-400 hover:bg-rose-50/60 transition group">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-slate-800 group-hover:text-rose-700">2. สภาวะความร้อนสูงเกิน (Thermal Overheating Alarm)</span>
+            <span class="text-amber-600 font-semibold bg-amber-50 px-2 py-0.5 rounded border border-amber-200">HI 74.0%</span>
+          </div>
+          <p class="text-slate-500 mt-1 text-[11px]">Ethylene (C2H4) สูง, Winding Temp 98°C, พัดลมระบายความร้อนทำงานหนัก</p>
+        </button>
+
+        <button onclick="applyPreset('critical_pd')" class="w-full text-left p-3.5 rounded-2xl border border-rose-200 hover:border-rose-400 hover:bg-rose-50/60 transition group">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-slate-800 group-hover:text-rose-700">3. สภาวะวิกฤต ฉนวนเสื่อมสภาพ & PD สูง (Critical Dielectric Issue)</span>
+            <span class="text-rose-700 font-semibold bg-rose-50 px-2 py-0.5 rounded border border-rose-200">HI 55.2%</span>
+          </div>
+          <p class="text-slate-500 mt-1 text-[11px]">ก๊าซ Acetylene (C2H2) พุ่งสูง, ความชื้นสะสม, สัญญาณ Partial Discharge วิกฤต</p>
+        </button>
+      </div>
+
+      <div class="flex justify-end pt-2">
+        <button onclick="closeModal('modal-preset')" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold">
+          ยกเลิก
+        </button>
       </div>
     </div>
   </div>
 
-  <!-- Modal 4: IEEE/IEC Standards -->
-  <div id="modal-standards" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 space-y-4">
-      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-        <h3 class="font-bold text-base text-white">มาตรฐานอ้างอิง (Engineering Standards)</h3>
-        <button onclick="closeModal('modal-standards')" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+  <!-- Modal 3: Formula & Calculations -->
+  <div id="modal-calc-formula" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white border border-rose-200 rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-xl">
+      <div class="flex items-center justify-between border-b border-rose-100 pb-3">
+        <h3 class="font-bold text-base text-slate-800">สูตรการคำนวณ RAM และ Health Index</h3>
+        <button onclick="closeModal('modal-calc-formula')" class="text-slate-400 hover:text-rose-600"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
-      <div class="text-xs text-slate-300 space-y-2">
-        <p>• <strong>IEEE C57.104:</strong> Guide for the Interpretation of Gases Generated in Mineral Oil-Immersed Transformers (DGA)</p>
-        <p>• <strong>IEC 60599:</strong> Mineral oil-filled electrical equipment in service - Guidance to the interpretation of dissolved and free gases analysis</p>
-        <p>• <strong>IEC 62271-203:</strong> Gas-insulated metal-enclosed switchgear for rated voltages above 52 kV</p>
-        <p>• <strong>CIGRE WG B3.24:</strong> SF6 Gas Handling and Condition Assessment in High Voltage Switchgear</p>
+      <div class="text-xs text-slate-600 space-y-3">
+        <div class="p-3 bg-rose-50/60 rounded-xl border border-rose-200/80 space-y-1.5">
+          <p class="font-bold text-rose-800">1. ความเชื่อถือได้ (Reliability - MTBF & Failure Rate):</p>
+          <p class="text-slate-700 font-mono text-[11px]">MTBF = T_operating / Failures (N)</p>
+          <p class="text-slate-700 font-mono text-[11px]">&lambda; (Failure Rate) = Failures (N) / T_operating</p>
+        </div>
+
+        <div class="p-3 bg-pink-50/60 rounded-xl border border-pink-200/80 space-y-1.5">
+          <p class="font-bold text-pink-800">2. ความสามารถในการบำรุงรักษา (Maintainability - MTTR):</p>
+          <p class="text-slate-700 font-mono text-[11px]">MTTR = Total Corrective Downtime / Failures (N)</p>
+        </div>
+
+        <div class="p-3 bg-rose-50/60 rounded-xl border border-rose-200/80 space-y-1.5">
+          <p class="font-bold text-rose-800">3. ความพร้อมใช้งาน (Operational Availability - A):</p>
+          <p class="text-slate-700 font-mono text-[11px]">A = (T_operating / (T_operating + Total Downtime)) &times; 100%</p>
+        </div>
+
+        <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5">
+          <p class="font-bold text-slate-800">4. การคำนวณ Health Index (HI %):</p>
+          <p class="text-slate-700 text-[11px]">คะแนนเริ่มต้น 100% หักลบด้วยค่าถ่วงน้ำหนักความรุนแรงของแต่ละพารามิเตอร์ (Warning: -2.5% ถึง -5%, Critical: -10% ถึง -25%) ตามมาตรฐาน CIGRE และ IEEE</p>
+        </div>
       </div>
-      <div class="text-right">
-        <button onclick="closeModal('modal-standards')" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs">รับทราบ</button>
+      <div class="flex justify-end pt-2">
+        <button onclick="closeModal('modal-calc-formula')" class="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-xl text-xs font-semibold">ปิด</button>
       </div>
     </div>
   </div>
 
+  <!-- Modal 4: Nameplate & Technical Specs -->
+  <div id="modal-asset-info" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white border border-rose-200 rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-xl">
+      <div class="flex items-center justify-between border-b border-rose-100 pb-3">
+        <h3 id="modal-specs-title" class="font-bold text-base text-slate-800">แผ่นป้ายข้อมูลอุปกรณ์ (Nameplate Data)</h3>
+        <button onclick="closeModal('modal-asset-info')" class="text-slate-400 hover:text-rose-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <div id="modal-specs-content" class="text-xs text-slate-600 space-y-2">
+        <!-- Dynamic Nameplate Specs -->
+      </div>
+      <div class="flex justify-end pt-2">
+        <button onclick="closeModal('modal-asset-info')" class="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-xl text-xs font-semibold">ปิด</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== JAVASCRIPT ENGINE & DATA STORE ==================== -->
   <script>
-    // State Store
-    const state = {
-      activeAsset: 'TX-01',
-      assets: {
-        'TX-01': {
-          name: 'Power Transformer (TX-01 115/22kV 50MVA)',
-          opHours: 8760,
-          failures: 1,
-          repairTime: 5.0,
-          params: {
-            h2: { label: 'ก๊าซไฮโดรเจน H₂ (DGA)', value: 15, unit: 'ppm', normalMax: 100, warnMax: 200 },
-            c2h2: { label: 'ก๊าซอะเซทิลีน C₂H₂ (DGA)', value: 0.5, unit: 'ppm', normalMax: 1, warnMax: 3 },
-            moisture: { label: 'ความชื้นในน้ำมัน (Moisture)', value: 14, unit: 'ppm', normalMax: 20, warnMax: 30 },
-            temp: { label: 'อุณหภูมิ Winding Hotspot', value: 65, unit: '°C', normalMax: 85, warnMax: 95 }
-          },
-          failureLogs: [
-            { date: '12 เม.ย. 2026', cause: 'Buchholz Relay Alarm (Gas Accumulation Test)', repairTime: '5.0', status: 'Resolved' }
-          ]
-        },
-        'GIS-01': {
-          name: 'Gas-Insulated Switchgear (GIS 115kV Bay-01)',
-          opHours: 17520,
-          failures: 0,
-          repairTime: 0.0,
-          params: {
-            sf6_pressure: { label: 'แรงดันก๊าซ SF₆ Pressure', value: 0.58, unit: 'MPa', normalMin: 0.55, warnMin: 0.50 },
-            pd_level: { label: 'ระดับ Partial Discharge (PD)', value: 4.2, unit: 'pC', normalMax: 10, warnMax: 20 },
-            sf6_moisture: { label: 'ความชื้นในก๊าซ SF₆', value: 45, unit: 'ppmv', normalMax: 150, warnMax: 250 },
-            cb_ops: { label: 'จำนวนรอบตัดตอนสะสม (CB Ops)', value: 180, unit: 'ครั้ง', normalMax: 2000, warnMax: 3000 }
-          },
-          failureLogs: [
-            { date: 'ไม่พบประวัติการหยุดซ่อมฉุกเฉิน', cause: '-', repairTime: '0.0', status: 'Normal' }
-          ]
-        }
+    // -------------------------------------------------------------
+    // DATA STORE: 40 Parameters for Transformer & 30 for GIS
+    // -------------------------------------------------------------
+    
+    const rawData = {
+      'TX-01': {
+        name: 'TX-01 (115/22 kV 50 MVA Substation Unit)',
+        type: 'Power Transformer',
+        badgeColor: 'bg-rose-500',
+        desc: 'หม้อแปลงไฟฟ้ากำลังชนิดแช่น้ำมัน (Oil-Immersed Power Transformer) พร้อมระบบ OLTC และ Bushing Diagnostics',
+        opHours: 8760,
+        failures: 1,
+        repairTime: 5.0,
+        plannedPM: 16.0,
+        historyAvail: [99.85, 99.92, 99.88, 99.96, 99.91, 99.94],
+        specs: [
+          { label: 'พิกัดกำลังไฟฟ้า (Rated Power)', val: '50/66.7 MVA (ONAN/ONAF)' },
+          { label: 'แรงดันพิกัด (Voltage Ratio)', val: '115 kV ± 8x1.25% / 22 kV' },
+          { label: 'ระบบระบายความร้อน (Cooling)', val: 'ONAN / ONAF 2 Stages' },
+          { label: 'กลุ่มเวกเตอร์ (Vector Group)', val: 'YNd11' },
+          { label: 'ชนิดน้ำมันฉนวน (Insulating Oil)', val: 'Mineral Oil IEC 60296 Uninhibited' },
+          { label: 'น้ำหนักรวม (Total Weight)', val: '68,500 kg (Oil: 18,200 kg)' },
+          { label: 'ปีที่ติดตั้ง (Commissioned Year)', val: '2019 (อายุการใช้งาน 7 ปี)' }
+        ],
+        // 40 Comprehensive Transformer Parameters across 7 Key Categories
+        parameters: [
+          // 1. DGA (Dissolved Gas Analysis) - 8 items
+          { id: 'tx_h2', name: 'ก๊าซไฮโดรเจน (H₂ - Hydrogen)', cat: '1. DGA (ก๊าซในน้ำมัน)', val: 18, unit: 'ppm', normalMax: 100, warnMax: 200, weight: 8, desc: 'เกิดจาก Corona Discharge หรือ Partial Discharge พลังงานต่ำในน้ำมัน', action: 'เฝ้าระวังอัตราการเพิ่มขึ้นต่อเดือน (Gas Generation Rate)' },
+          { id: 'tx_ch4', name: 'ก๊าซมีเทน (CH₄ - Methane)', cat: '1. DGA (ก๊าซในน้ำมัน)', val: 24, unit: 'ppm', normalMax: 120, warnMax: 400, weight: 6, desc: 'เกิดจากความร้อนสะสมระดับต่ำในน้ำมันฉนวน (< 300°C)', action: 'วิเคราะห์ร่วมกับ C2H6 และ C2H4' },
+          { id: 'tx_c2h6', name: 'ก๊าซอีเทน (C₂H₆ - Ethane)', cat: '1. DGA (ก๊าซในน้ำมัน)', val: 15, unit: 'ppm', normalMax: 65, warnMax: 150, weight: 6, desc: 'ความร้อนสะสมระดับปานกลาง (300°C - 700°C) ในน้ำมัน', action: 'ตรวจสอบโหลดหม้อแปลงและระบบพัดลมระบายความร้อน' },
+          { id: 'tx_c2h4', name: 'ก๊าซเอทิลีน (C₂H₄ - Ethylene)', cat: '1. DGA (ก๊าซในน้ำมัน)', val: 28, unit: 'ppm', normalMax: 50, warnMax: 200, weight: 9, desc: 'เกิดจาก Thermal Fault รุนแรง (> 700°C) บริเวณแกนเหล็กหรือจุดต่อ', action: 'ส่องกล้อง Infrared Thermoscan หาจุด Hotspot ภายนอก' },
+          { id: 'tx_c2h2', name: 'ก๊าซอะเซทิลีน (C₂H₂ - Acetylene)', cat: '1. DGA (ก๊าซในน้ำมัน)', val: 0.2, unit: 'ppm', normalMax: 1, warnMax: 3, weight: 15, desc: 'เกิดจากการอาร์กไฟฟ้าพลังงานสูง (High Energy Arcing) ในน้ำมัน', action: 'หากเกิน 1 ppm ต้องวางแผนหยุดเดินเครื่องตรวจสอบทันที' },
+          { id: 'tx_co', name: 'ก๊าซคาร์บอนมอนอกไซด์ (CO)', cat: '1. DGA (ก๊าซในน้ำมัน)', val: 180, unit: 'ppm', normalMax: 350, warnMax: 600, weight: 7, desc: 'เกิดจากความร้อนเสื่อมสภาพของกระดาษฉนวนแข็ง (Cellulose Degradation)', action: 'คำนวณอัตราส่วน CO2/CO เพื่อดูระดับการเสื่อมของกระดาษ' },
+          { id: 'tx_co2', name: 'ก๊าซคาร์บอนไดออกไซด์ (CO₂)', cat: '1. DGA (ก๊าซในน้ำมัน)', val: 1450, unit: 'ppm', normalMax: 2500, warnMax: 4000, weight: 5, desc: 'ผลพลอยได้จากการเสื่อมสภาพตามอายุของเยื่อกระดาษฉนวน', action: 'ติดตามค่าความชื้นและอัตราการเสื่อมของฉนวน' },
+          { id: 'tx_tdcg', name: 'ก๊าซติดไฟรวม (TDCG Total Gas)', cat: '1. DGA (ก๊าซในน้ำมัน)', val: 265.2, unit: 'ppm', normalMax: 720, warnMax: 1920, weight: 7, desc: 'ผลรวมของก๊าซติดไฟทั้งหมดตามมาตรฐาน IEEE C57.104', action: 'ประเมินสถานะสภาพ Condition 1 (Normal)' },
+
+          // 2. Oil Quality (คุณสมบัติน้ำมัน) - 6 items
+          { id: 'tx_bdv', name: 'แรงดันเบรกดาวน์น้ำมัน (Dielectric BDV)', cat: '2. Oil Quality (คุณภาพน้ำมัน)', val: 62.5, unit: 'kV', normalMin: 50, warnMin: 40, weight: 12, desc: 'ความทนทานต่อแรงดันไฟฟ้าของน้ำมันฉนวนตาม IEC 60156', action: 'หากต่ำกว่า 40 kV ต้องนำน้ำมันไปกรองไล่ความชื้น (Oil Purification)' },
+          { id: 'tx_oil_moist', name: 'ความชื้นในน้ำมัน (Oil Moisture)', cat: '2. Oil Quality (คุณภาพน้ำมัน)', val: 12.8, unit: 'ppm', normalMax: 20, warnMax: 30, weight: 10, desc: 'ปริมาณน้ำเจือปนในน้ำมันฉนวนที่อุณหภูมิใช้งาน', action: 'ตรวจสอบ Silica Gel ใน Breather และค่าฟองอากาศ' },
+          { id: 'tx_ift', name: 'แรงตึงผิวระหว่างผิวสัมผัส (IFT)', cat: '2. Oil Quality (คุณภาพน้ำมัน)', val: 34.0, unit: 'mN/m', normalMin: 28, warnMin: 22, weight: 7, desc: 'ดัชนีบ่งชี้สารแปลกปลอมและตะกอนโคลน (Sludge) ในน้ำมัน', action: 'หากต่ำกว่า 22 mN/m น้ำมันเริ่มเกิดโคลนตกตะกอน' },
+          { id: 'tx_nn', name: 'ค่าความเป็นกรด (Neutralization No.)', cat: '2. Oil Quality (คุณภาพน้ำมัน)', val: 0.03, unit: 'mgKOH/g', normalMax: 0.10, warnMax: 0.20, weight: 8, desc: 'วัดสารประกอบกรดที่เกิดจากการออกซิเดชันของน้ำมัน', action: 'ป้องกันการกัดกร่อนขดลวดทองแดงและแกนเหล็ก' },
+          { id: 'tx_df', name: 'ค่า Dielectric Dissipation Factor (tan &delta;)', cat: '2. Oil Quality (คุณภาพน้ำมัน)', val: 0.0035, unit: 'tan δ', normalMax: 0.010, warnMax: 0.050, weight: 8, desc: 'วัดการสูญเสียทางไดอิเล็กตริกในน้ำมันที่ 90°C', action: 'ตรวจหาสารปนเปื้อนชนิดขั้ว (Polar Contaminants)' },
+          { id: 'tx_furan', name: 'สารฟูแรน (2-Furfural 2-FAL)', cat: '2. Oil Quality (คุณภาพน้ำมัน)', val: 0.08, unit: 'mg/kg', normalMax: 0.50, warnMax: 1.50, weight: 10, desc: 'บ่งชี้ระดับการสลายตัวของกระดาษฉนวน (Degree of Polymerization DP)', action: 'ประเมินอายุการใช้งานคงเหลือของกระดาษฉนวน (Life Expectancy)' },
+
+          // 3. Thermal & Temperatures - 5 items
+          { id: 'tx_top_oil_temp', name: 'อุณหภูมิน้ำมันชั้นบน (Top Oil Temp)', cat: '3. Thermal (อุณหภูมิและความร้อน)', val: 62.4, unit: '°C', normalMax: 85, warnMax: 95, weight: 8, desc: 'อุณหภูมิสูงสุดของน้ำมันที่ผิวด้านบนของถังหลัก', action: 'ระบบสัญญาณเตือน Alarm เมื่อเกิน 85°C' },
+          { id: 'tx_winding_temp_hv', name: 'อุณหภูมิขดลวด HV (Winding Temp HV)', cat: '3. Thermal (อุณหภูมิและความร้อน)', val: 71.8, unit: '°C', normalMax: 95, warnMax: 110, weight: 10, desc: 'อุณหภูมิขดลวดแรงสูงฝั่ง 115 kV', action: 'สั่งสตาร์ทพัดลมระบายความร้อน Stage 1 ที่ 75°C' },
+          { id: 'tx_winding_temp_lv', name: 'อุณหภูมิขดลวด LV (Winding Temp LV)', cat: '3. Thermal (อุณหภูมิและความร้อน)', val: 68.5, unit: '°C', normalMax: 95, warnMax: 110, weight: 8, desc: 'อุณหภูมิขดลวดแรงต่ำฝั่ง 22 kV', action: 'ตรวจสอบความสมดุลของกระแสโหลด 3 เฟส' },
+          { id: 'tx_hotspot_temp', name: 'จุดร้อนสูงสุดจำลอง (Winding Hotspot)', cat: '3. Thermal (อุณหภูมิและความร้อน)', val: 82.0, unit: '°C', normalMax: 110, warnMax: 125, weight: 10, desc: 'จุดที่ร้อนที่สุดภายในขดลวดตามโมเดลคำนวณ IEEE C57.91', action: 'หากเกิน 120°C จะเร่งอัตราการเสื่อมของฉนวนเป็น 2 เท่า' },
+          { id: 'tx_cooling_bank', name: 'กระแสพัดลมระบายความร้อน (Cooling Current)', cat: '3. Thermal (อุณหภูมิและความร้อน)', val: 14.2, unit: 'A', normalMax: 18.0, warnMax: 22.0, weight: 5, desc: 'กระแสไฟฟ้ารวมของชุดมอเตอร์พัดลม ONAF Stage 1 & 2', action: 'ตรวจเช็กลูกปืนและมอเตอร์พัดลมประจำรอบ' },
+
+          // 4. Bushing Diagnostics - 6 items
+          { id: 'tx_bush_c1_h1', name: 'คาปาซิแตนซ์ Bushing H1 (C1 Cap)', cat: '4. Bushing Diagnostics (บุชชิ่ง)', val: 342.1, unit: 'pF', normalMax: 360, warnMax: 380, weight: 8, desc: 'ค่าความจุไฟฟ้าของบุชชิ่ง 115 kV Phase A (Nominal 340 pF)', action: 'หาก C1 เปลี่ยนแปลงเกิน 5% ต้องตรวจสอบการลัดวงจรระหว่างชั้นฟอยล์' },
+          { id: 'tx_bush_df_h1', name: 'ตัวประกอบการสูญเสีย Bushing H1 (tan &delta;)', cat: '4. Bushing Diagnostics (บุชชิ่ง)', val: 0.38, unit: '%', normalMax: 0.70, warnMax: 1.00, weight: 9, desc: 'ค่า Dielectric Loss Factor Bushing H1', action: 'หากเกิน 0.85% มีความเสี่ยงฉนวนบุชชิ่งระเบิด' },
+          { id: 'tx_bush_c1_h2', name: 'คาปาซิแตนซ์ Bushing H2 (C1 Cap)', cat: '4. Bushing Diagnostics (บุชชิ่ง)', val: 339.8, unit: 'pF', normalMax: 360, warnMax: 380, weight: 7, desc: 'ค่าความจุไฟฟ้าของบุชชิ่ง 115 kV Phase B', action: 'เทียบเคียงความเบี่ยงเบนระหว่าง 3 เฟส' },
+          { id: 'tx_bush_df_h2', name: 'ตัวประกอบการสูญเสีย Bushing H2 (tan &delta;)', cat: '4. Bushing Diagnostics (บุชชิ่ง)', val: 0.41, unit: '%', normalMax: 0.70, warnMax: 1.00, weight: 8, desc: 'ค่า Dielectric Loss Factor Bushing H2', action: 'ปกติ' },
+          { id: 'tx_bush_c1_h3', name: 'คาปาซิแตนซ์ Bushing H3 (C1 Cap)', cat: '4. Bushing Diagnostics (บุชชิ่ง)', val: 341.0, unit: 'pF', normalMax: 360, warnMax: 380, weight: 7, desc: 'ค่าความจุไฟฟ้าของบุชชิ่ง 115 kV Phase C', action: 'ปกติ' },
+          { id: 'tx_bush_df_h3', name: 'ตัวประกอบการสูญเสีย Bushing H3 (tan &delta;)', cat: '4. Bushing Diagnostics (บุชชิ่ง)', val: 0.39, unit: '%', normalMax: 0.70, warnMax: 1.00, weight: 8, desc: 'ค่า Dielectric Loss Factor Bushing H3', action: 'ปกติ' },
+
+          // 5. On-Load Tap Changer (OLTC) - 5 items
+          { id: 'tx_oltc_tap_pos', name: 'ตำแหน่งแท็ปปัจจุบัน (Tap Position)', cat: '5. OLTC (ชุดเปลี่ยนแท็ป)', val: 9, unit: 'Tap', normalMax: 17, warnMax: 17, weight: 3, desc: 'ตำแหน่งแท็ปปรับแรงดัน (ช่วงแท็ป 1 ถึง 17, Nominal: 9)', action: 'บันทึกการทำงานของระบบปรับแรงดันอัตโนมัติ (AVR)' },
+          { id: 'tx_oltc_ops', name: 'จำนวนรอบสลับแท็ปสะสม (Operation Count)', cat: '5. OLTC (ชุดเปลี่ยนแท็ป)', val: 24500, unit: 'Ops', normalMax: 50000, warnMax: 80000, weight: 6, desc: 'สถิติการเปลี่ยนแท็ปทั้งหมดนับตั้งแต่ Overhaul ครั้งล่าสุด', action: 'กำหนดรอบบำรุงรักษาหน้าสัมผัส Diverter Switch ที่ 50,000 ครั้ง' },
+          { id: 'tx_oltc_motor_time', name: 'เวลาทำงานมอเตอร์สลับแท็ป (Drive Time)', cat: '5. OLTC (ชุดเปลี่ยนแท็ป)', val: 5.2, unit: 'sec', normalMax: 6.5, warnMax: 8.0, weight: 6, desc: 'ระยะเวลาที่มอเตอร์ขับกลไกเปลี่ยนแท็ป 1 Step', action: 'หากเกิน 7.0 วินาที แสดงว่ากลไกฝืดหรือสปริงขับเริ่มล้า' },
+          { id: 'tx_oltc_oil_bdv', name: 'แรงดันเบรกดาวน์น้ำมันในช่อง OLTC', cat: '5. OLTC (ชุดเปลี่ยนแท็ป)', val: 48.0, unit: 'kV', normalMin: 35, warnMin: 25, weight: 8, desc: 'ความทนทานต่อแรงดันไฟฟ้าของน้ำมันในถัง Diverter Switch', action: 'เปลี่ยนไส้กรองน้ำมัน OLTC อัตโนมัติ' },
+          { id: 'tx_oltc_temp_diff', name: 'ผลต่างอุณหภูมิถังหลักกับ OLTC (&Delta;T)', cat: '5. OLTC (ชุดเปลี่ยนแท็ป)', val: 1.8, unit: '°C', normalMax: 5.0, warnMax: 8.0, weight: 7, desc: 'ความต่างของอุณหภูมิน้ำมันถังหลักเทียบกับถัง OLTC', action: 'หาก &Delta;T สูง แสดงว่าหน้าสัมผัสภายใน OLTC เกิดความร้อนสะสมผิดปกติ' },
+
+          // 6. Electrical Insulation & Core - 5 items
+          { id: 'tx_ins_hv_gnd', name: 'ความต้านทานฉนวน HV - Ground (Insulation R)', cat: '6. ฉนวนไฟฟ้า & แกนเหล็ก', val: 8500, unit: 'MΩ', normalMin: 2000, warnMin: 1000, weight: 8, desc: 'ค่าความต้านทานฉนวนที่ 1 นาที (5 kV Megger Test)', action: 'ทดสอบค่า Polarization Index (PI) ร่วมด้วย' },
+          { id: 'tx_pi_ratio', name: 'ค่า Polarization Index (PI = R10m/R1m)', cat: '6. ฉนวนไฟฟ้า & แกนเหล็ก', val: 2.15, unit: 'Ratio', normalMin: 2.0, warnMin: 1.5, weight: 7, desc: 'ดัชนีวัดการสะสมประจุและความแห้งสะอาดของฉนวน', action: 'ค่า > 2.0 บ่งชี้ว่าฉนวนแห้งและอยู่ในสภาพดีเยี่ยม' },
+          { id: 'tx_core_ground_curr', name: 'กระแสรั่วไหลลงดินแกนเหล็ก (Core Ground)', cat: '6. ฉนวนไฟฟ้า & แกนเหล็ก', val: 42, unit: 'mA', normalMax: 100, warnMax: 300, weight: 8, desc: 'กระแสรั่วไหลที่จุดต่อลงดินจุดเดียวของแกนเหล็ก (Single Point Core Ground)', action: 'หากเกิน 100 mA แสดงว่าแกนเหล็กลงดินมากกว่า 1 จุด (Multiple Core Grounding)' },
+          { id: 'tx_short_imp', name: 'ค่าอิมพีแดนซ์ลัดวงจร (% Impedance Z)', cat: '6. ฉนวนไฟฟ้า & แกนเหล็ก', val: 10.45, unit: '%', normalMax: 11.5, warnMax: 12.5, weight: 7, desc: '% Impedance เทียบกับค่าบน Nameplate (10.50%)', action: 'ความเบี่ยงเบน < 2% ยืนยันว่าขดลวดไม่บิดเบี้ยวจากการลัดวงจร' },
+          { id: 'tx_leakage_reactance', name: 'ความเบี่ยงเบน Leakage Reactance', cat: '6. ฉนวนไฟฟ้า & แกนเหล็ก', val: 0.65, unit: '%', normalMax: 2.0, warnMax: 5.0, weight: 8, desc: 'การเปลี่ยนแปลงของรีแอกแตนซ์จากการทดสอบ SFRA / Leakage Test', action: 'ประเมินการเคลื่อนตัวทางกลของโครงสร้างขดลวด (Winding Deformation)' },
+
+          // 7. Mechanical, Acoustic & Environment - 5 items
+          { id: 'tx_tank_vib', name: 'ความสั่นสะเทือนผนังถัง (Tank Vibration)', cat: '7. ระบบกลไก & สิ่งแวดล้อม', val: 1.45, unit: 'mm/s', normalMax: 2.80, warnMax: 4.50, weight: 6, desc: 'ระดับความสั่นสะเทือน RMS ที่ความถี่ 100 Hz จากแกนเหล็ก', action: 'ตรวจเช็กความแน่นหนาของน็อตยึดโครงสร้างและฐานราก' },
+          { id: 'tx_noise_db', name: 'ระดับเสียงรบกวน (Acoustic Noise)', cat: '7. ระบบกลไก & สิ่งแวดล้อม', val: 64.2, unit: 'dBA', normalMax: 72.0, warnMax: 80.0, weight: 4, desc: 'ระดับเสียง Hum บริเวณรอบตัวถังระยะ 1 เมตร', action: 'เป็นไปตามเกณฑ์มาตรฐาน NEMA TR-1' },
+          { id: 'tx_oil_level', name: 'ระดับน้ำมันถังพัก (Conservator Level)', cat: '7. ระบบกลไก & สิ่งแวดล้อม', val: 55, unit: '%', normalMin: 35, warnMin: 20, weight: 8, desc: 'ระดับน้ำมันฉนวนเทียบกับสเกลอุณหภูมิบนเกจวัด', action: 'หากต่ำกว่า 20% ต้องเติมน้ำมันป้องกันอากาศเข้าถัง' },
+          { id: 'tx_tank_press', name: 'แรงดันภายในถังหม้อแปลง (Tank Pressure)', cat: '7. ระบบกลไก & สิ่งแวดล้อม', val: 0.18, unit: 'bar', normalMax: 0.35, warnMax: 0.50, weight: 7, desc: 'แรงดันก๊าซไนโตรเจนคลุมผิวหน้าหรือแรงดันของเหลว', action: 'อุปกรณ์ Pressure Relief Device (PRD) จะระบายที่ 0.55 bar' },
+          { id: 'tx_pd_acoustic', name: 'สัญญาณ Partial Discharge (Acoustic PD)', cat: '7. ระบบกลไก & สิ่งแวดล้อม', val: 85, unit: 'pC', normalMax: 250, warnMax: 500, weight: 9, desc: 'การตรวจจับสัญญาณการดิสชาร์จบางส่วนด้วยเซนเซอร์คลื่นเสียงความถี่สูง', action: 'ระบุตำแหน่งหากพบสัญญาณความถี่สะท้อนสม่ำเสมอ' }
+        ]
+      },
+
+      // -------------------------------------------------------------
+      // GIS-01: 30 Parameters for Gas-Insulated Switchgear
+      // -------------------------------------------------------------
+      'GIS-01': {
+        name: 'GIS-01 (115 kV SF₆ Gas-Insulated Feeder Bay)',
+        type: 'Gas-Insulated Switchgear',
+        badgeColor: 'bg-pink-500',
+        desc: 'สวิตช์เกียร์ฉนวนก๊าซ SF₆ ขนาด 115 kV ชนิด 3-Phase Enclosure พร้อมระบบ Circuit Breaker, Disconnector & Earthing Switch',
+        opHours: 17520,
+        failures: 0,
+        repairTime: 0.0,
+        plannedPM: 8.0,
+        historyAvail: [99.96, 99.98, 99.97, 99.99, 99.98, 99.98],
+        specs: [
+          { label: 'พิกัดแรงดันใช้งาน (Rated Voltage)', val: '115 kV (Max 145 kV)' },
+          { label: 'พิกัดกระแสปกติ (Rated Normal Current)', val: '2,000 A' },
+          { label: 'พิกัดตัดกระแสลัดวงจร (Short-Circuit Breaking)', val: '40 kA (3 sec)' },
+          { label: 'แรงดันก๊าซ SF₆ พิกัด (Rated SF₆ Pressure)', val: '0.60 MPa @ 20°C (Filling)' },
+          { label: 'ระดับแจ้งเตือนแรงดัน (SF₆ Alarm Level)', val: '0.52 MPa @ 20°C' },
+          { label: 'ระดับตัดวงจร (SF₆ Lockout Level)', val: '0.50 MPa @ 20°C' },
+          { label: 'ปีที่ติดตั้ง (Commissioned Year)', val: '2021 (อายุการใช้งาน 5 ปี)' }
+        ],
+        // 30 Comprehensive GIS Parameters across 6 Key Categories
+        parameters: [
+          // 1. SF6 Gas State & Density (7 items)
+          { id: 'gis_sf6_cb_press', name: 'แรงดันก๊าซ SF₆ ช่อง Circuit Breaker', cat: '1. SF₆ Gas Quality (ก๊าซฉนวน)', val: 0.585, unit: 'MPa', normalMin: 0.550, warnMin: 0.520, weight: 15, desc: 'แรงดันก๊าซในช่องตัดวงจรหลักที่ชดเชยอุณหภูมิแล้ว (Temp-Compensated)', action: 'หากต่ำกว่า 0.52 MPa สัญญาณเตือน Gas Low Alarm จะดัง' },
+          { id: 'gis_sf6_ds_press', name: 'แรงดันก๊าซ SF₆ ช่อง Disconnector (DS)', cat: '1. SF₆ Gas Quality (ก๊าซฉนวน)', val: 0.442, unit: 'MPa', normalMin: 0.420, warnMin: 0.390, weight: 10, desc: 'แรงดันก๊าซในช่องสวิตช์ใบมีดตัดตอนและสวิตช์ใบมีดลงดิน', action: 'ปกติ' },
+          { id: 'gis_sf6_bus_press', name: 'แรงดันก๊าซ SF₆ ช่อง Main Busbar', cat: '1. SF₆ Gas Quality (ก๊าซฉนวน)', val: 0.445, unit: 'MPa', normalMin: 0.420, warnMin: 0.390, weight: 10, desc: 'แรงดันก๊าซในช่องบัสบาร์หลัก 3 เฟส', action: 'ปกติ' },
+          { id: 'gis_sf6_purity', name: 'ความบริสุทธิ์ของก๊าซ SF₆ (Purity)', cat: '1. SF₆ Gas Quality (ก๊าซฉนวน)', val: 99.2, unit: '% vol', normalMin: 97.0, warnMin: 95.0, weight: 12, desc: 'เปอร์เซ็นต์เนื้อก๊าซ SF₆ แท้ตามมาตรฐาน IEC 60480', action: 'หากต่ำกว่า 95% ต้องถ่ายก๊าซออกเพื่อเข้าเครื่องรีไซเคิล' },
+          { id: 'gis_sf6_moisture', name: 'ความชื้นในก๊าซ SF₆ (Moisture Dewpoint)', cat: '1. SF₆ Gas Quality (ก๊าซฉนวน)', val: 42.0, unit: 'ppmv', normalMax: 150.0, warnMax: 250.0, weight: 10, desc: 'ปริมาณไอน้ำเจือปนในก๊าซ SF₆ (จุดน้ำค้าง < -36°C)', action: 'ความชื้นต่ำป้องกันการรวมตัวเป็นกรดไฮโดรฟลูออริก (HF)' },
+          { id: 'gis_sf6_so2', name: 'ก๊าซผลพลอยได้ SO₂ By-product', cat: '1. SF₆ Gas Quality (ก๊าซฉนวน)', val: 1.8, unit: 'ppmv', normalMax: 5.0, warnMax: 12.0, weight: 9, desc: 'สารสลายตัวจากประกายไฟและการอาร์กสัมผัสกับความชื้น', action: 'หากสูงแสดงว่ามีการอาร์กสะสมบ่อยครั้งในหัวตัด' },
+          { id: 'gis_sf6_leak_rate', name: 'อัตราการรั่วไหลก๊าซต่อปี (Leakage Rate)', cat: '1. SF₆ Gas Quality (ก๊าซฉนวน)', val: 0.22, unit: '%/year', normalMax: 0.50, warnMax: 1.00, weight: 8, desc: 'อัตราการสูญเสียเนื้อก๊าซตามเกณฑ์มาตรฐาน IEC 62271-203 (< 0.5%/ปี)', action: 'ใช้กล้องอินฟราเรด Optical Gas Imaging สแกนรอยต่อซีล' },
+
+          // 2. Partial Discharge (PD) UHF & Acoustic (5 items)
+          { id: 'gis_pd_cb_uhf', name: 'สัญญาณ Partial Discharge ช่อง CB (UHF)', cat: '2. Partial Discharge (PD)', val: 3.8, unit: 'pC', normalMax: 10.0, warnMax: 20.0, weight: 14, desc: 'ตรวจจับสัญญาณความถี่สูงยิ่งยวด (300 MHz - 1.5 GHz) ภายในช่อง CB', action: 'หากเกิน 10 pC ต้องทำ Phase-Resolved Partial Discharge (PRPD) Analysis' },
+          { id: 'gis_pd_bus_uhf', name: 'สัญญาณ Partial Discharge ช่อง Busbar (UHF)', cat: '2. Partial Discharge (PD)', val: 2.1, unit: 'pC', normalMax: 10.0, warnMax: 20.0, weight: 10, desc: 'สัญญาณ PD ในช่องบัสบาร์', action: 'สภาพฉนวน Spacer อยู่ในเกณฑ์ปกติ' },
+          { id: 'gis_pd_ds_acoustic', name: 'สัญญาณคลื่นเสียง Acoustic PD', cat: '2. Partial Discharge (PD)', val: 12.5, unit: 'mV', normalMax: 25.0, warnMax: 50.0, weight: 8, desc: 'ตรวจจับอนุภาคโลหะอิสระลอยตัว (Free Moving Metallic Particles)', action: 'ปกติ ไม่มีอนุภาคโลหะเคลื่อนที่ในช่องก๊าซ' },
+          { id: 'gis_pd_pulse_count', name: 'อัตราความถี่สัญญาณดิสชาร์จ (Pulse Rate)', cat: '2. Partial Discharge (PD)', val: 4, unit: 'Pulse/s', normalMax: 50, warnMax: 150, weight: 7, desc: 'จำนวนลูกคลื่นดิสชาร์จต่อวินาที', action: 'ไม่มีการคายประจุต่อเนื่อง' },
+          { id: 'gis_pd_spacer_stress', name: 'ความเค้นฉนวนแผ่นกั้น (Insulator Stress)', cat: '2. Partial Discharge (PD)', val: 18.2, unit: '%', normalMax: 40.0, warnMax: 65.0, weight: 7, desc: 'การกระจายตัวของสนามไฟฟ้าบน Epoxy Insulator Spacer', action: 'ปกติ' },
+
+          // 3. Circuit Breaker Mechanical Dynamics (6 items)
+          { id: 'gis_cb_open_time', name: 'เวลาในการเปิดวงจร (CB Opening Time)', cat: '3. กลไก Circuit Breaker (CB)', val: 22.4, unit: 'ms', normalMax: 28.0, warnMax: 35.0, weight: 10, desc: 'เวลาตั้งแต่คอยล์ Trip ทำงานจนถึงหน้าสัมผัสแยกตัวออกจากกัน', action: 'ความเร็วในการตัดวงจรอยู่ในเกณฑ์มาตรฐาน' },
+          { id: 'gis_cb_close_time', name: 'เวลาในการปิดวงจร (CB Closing Time)', cat: '3. กลไก Circuit Breaker (CB)', val: 48.6, unit: 'ms', normalMax: 60.0, warnMax: 75.0, weight: 8, desc: 'เวลาในการ Close หน้าสัมผัสของเซอร์กิตเบรกเกอร์', action: 'ปกติ' },
+          { id: 'gis_cb_sync_diff', name: 'ความต่างเวลาสัมผัสระหว่าง 3 เฟส (Simultaneity)', cat: '3. กลไก Circuit Breaker (CB)', val: 1.2, unit: 'ms', normalMax: 2.5, warnMax: 4.0, weight: 9, desc: 'ความเหลื่อมเวลาในการตัดตอนของหน้าสัมผัส 3 เฟส (Pole Discrepancy)', action: 'หากเกิน 3 ms จะเกิด Transient Overvoltage สูงในระบบ' },
+          { id: 'gis_cb_contact_wear', name: 'การสึกหรอของหน้าสัมผัสอาร์ก (Arcing Contact Wear)', cat: '3. กลไก Circuit Breaker (CB)', val: 14.5, unit: '%', normalMax: 50.0, warnMax: 80.0, weight: 10, desc: 'การสึกหรอสะสมจากกระแสลัดวงจร (&Sigma; I²t)', action: 'ประมาณการอายุหน้าสัมผัสยังเหลืออีกกว่า 85%' },
+          { id: 'gis_cb_total_ops', name: 'จำนวนครั้งการตัดตอนสะสม (Total Operations)', cat: '3. กลไก Circuit Breaker (CB)', val: 184, unit: 'Ops', normalMax: 2000, warnMax: 5000, weight: 5, desc: 'สถิติจำนวนรอบ Close-Open รวมของ Circuit Breaker', action: 'พิกัดกลไกสปริงรองรับได้ 10,000 ครั้ง (M2 Class)' },
+          { id: 'gis_cb_spring_charge_time', name: 'เวลาชาร์จสปริงกลไก (Spring Charging Time)', cat: '3. กลไก Circuit Breaker (CB)', val: 8.4, unit: 'sec', normalMax: 12.0, warnMax: 15.0, weight: 6, desc: 'ระยะเวลาที่มอเตอร์ชาร์จสปริงจนพร้อมทำงาน (O-C-O Cycle)', action: 'ตรวจเช็กแปรงถ่านและกระแสมอเตอร์ชาร์จสปริง' },
+
+          // 4. Contact Resistance & Main Circuit (4 items)
+          { id: 'gis_res_cb_main', name: 'ความต้านทานหน้าสัมผัสหลัก CB (Phase A)', cat: '4. ความต้านทานวงจรหลัก', val: 32.8, unit: 'μΩ', normalMax: 45.0, warnMax: 60.0, weight: 10, desc: 'Micro-Ohm Test กระแสตรง 100A ผ่านขั้วต่อหลัก', action: 'หน้าสัมผัสแน่นหนา ไม่เกิดความร้อนสะสม' },
+          { id: 'gis_res_cb_phase_b', name: 'ความต้านทานหน้าสัมผัสหลัก CB (Phase B)', cat: '4. ความต้านทานวงจรหลัก', val: 33.5, unit: 'μΩ', normalMax: 45.0, warnMax: 60.0, weight: 8, desc: 'ความต้านทานหน้าสัมผัสเฟส B', action: 'ปกติ' },
+          { id: 'gis_res_cb_phase_c', name: 'ความต้านทานหน้าสัมผัสหลัก CB (Phase C)', cat: '4. ความต้านทานวงจรหลัก', val: 31.9, unit: 'μΩ', normalMax: 45.0, warnMax: 60.0, weight: 8, desc: 'ความต้านทานหน้าสัมผัสเฟส C', action: 'ปกติ' },
+          { id: 'gis_res_bus_joint', name: 'ความต้านทานจุดต่อบัสบาร์ (Busbar Joint)', cat: '4. ความต้านทานวงจรหลัก', val: 18.4, unit: 'μΩ', normalMax: 30.0, warnMax: 45.0, weight: 7, desc: 'ความต้านทานจุดต่อ Plug-in Contact ระหว่าง Bay', action: 'ปกติ' },
+
+          // 5. Disconnector & Fast Earthing Switch (4 items)
+          { id: 'gis_ds_motor_current', name: 'กระแสมอเตอร์ขับใบมีด Disconnector (DS)', cat: '5. สวิตช์ตัดตอน & ใบมีดลงดิน', val: 2.4, unit: 'A', normalMax: 3.5, warnMax: 5.0, weight: 6, desc: 'กระแสไฟฟ้าขณะมอเตอร์ขับสลับตำแหน่งเปิด-ปิด DS', action: 'หากกระแสสูง แสดงว่าข้อต่อกลไกเริ่มติดขัด' },
+          { id: 'gis_ds_travel_time', name: 'เวลาขับเคลื่อนใบมีด DS (Operating Time)', cat: '5. สวิตช์ตัดตอน & ใบมีดลงดิน', val: 3.8, unit: 'sec', normalMax: 5.0, warnMax: 7.0, weight: 5, desc: 'เวลาในการเคลื่อนที่จนสุดตำแหน่ง Open/Close', action: 'ปกติ' },
+          { id: 'gis_fes_close_time', name: 'เวลาตัดลงดินฉับพลัน Fast Earthing (FES)', cat: '5. สวิตช์ตัดตอน & ใบมีดลงดิน', val: 88, unit: 'ms', normalMax: 120, warnMax: 160, weight: 8, desc: 'ความเร็วในการต่อวงจรลงดินฉับพลันเพื่อความปลอดภัย', action: 'ทดสอบสปริงขับเคลื่อนของ Fast Earthing Switch' },
+          { id: 'gis_es_contact_res', name: 'ความต้านทานหน้าสัมผัส Earthing Switch', cat: '5. สวิตช์ตัดตอน & ใบมีดลงดิน', val: 42.0, unit: 'μΩ', normalMax: 70.0, warnMax: 100.0, weight: 6, desc: 'ความสมบูรณ์ของหน้าสัมผัสลงดิน', action: 'ปกติ' },
+
+          // 6. Secondary, Control & Enclosure (4 items)
+          { id: 'gis_enclosure_temp', name: 'อุณหภูมิผิวท่อ Enclosure (Skin Temp)', cat: '6. วงจรควบคุม & สิ่งแวดล้อม', val: 44.5, unit: '°C', normalMax: 65.0, warnMax: 80.0, weight: 7, desc: 'อุณหภูมิผิวอะลูมิเนียมหุ้มภายนอกขณะจ่ายโหลดสูงสุด', action: 'ไม่พบความร้อนสะสมผิดปกติ' },
+          { id: 'gis_trip_coil_curr', name: 'กระแสคอยล์ทริป (Trip Coil 1 Current)', cat: '6. วงจรควบคุม & สิ่งแวดล้อม', val: 2.1, unit: 'A', normalMax: 3.0, warnMax: 4.0, weight: 7, desc: 'กระแสสั่งปลดวงจรจากรีเลย์ป้องกัน', action: 'วงจร Trip Circuit Supervision สมบูรณ์' },
+          { id: 'gis_dc_supply_volt', name: 'แรงดันไฟเลี้ยง DC Control Supply', cat: '6. วงจรควบคุม & สิ่งแวดล้อม', val: 124.5, unit: 'VDC', normalMin: 110.0, warnMin: 98.0, weight: 8, desc: 'แรงดันไฟฟ้ากระแสตรงจากแบตเตอรี่สถานีไฟฟ้า (Nominal 125 VDC)', action: 'ปกติ' },
+          { id: 'gis_heater_status', name: 'กระแสฮีตเตอร์ตู้ควบคุม (Panel Space Heater)', cat: '6. วงจรควบคุม & สิ่งแวดล้อม', val: 1.85, unit: 'A', normalMin: 1.2, warnMin: 0.5, weight: 6, desc: 'ระบบไล่ความชื้นในตู้ Local Control Cabinet (LCC)', action: 'ทำงานปกติ ป้องกันการเกาะของหยดน้ำในตู้คอนโทรล' }
+        ]
       }
     };
 
-    let chartInstance = null;
+    // Current State
+    let currentAssetKey = 'TX-01';
+    let appData = JSON.parse(JSON.stringify(rawData)); // Deep clone
+    let trendChartInstance = null;
 
-    function switchAsset() {
-      state.activeAsset = document.getElementById('asset-select').value;
-      populateInputs();
-      recalculateAll();
-    }
+    // -------------------------------------------------------------
+    // INITIALIZATION & EVENT HANDLERS
+    // -------------------------------------------------------------
+    window.addEventListener('DOMContentLoaded', () => {
+      initApp();
+    });
 
-    function populateInputs() {
-      const asset = state.assets[state.activeAsset];
-      document.getElementById('input-op-hours').value = asset.opHours;
-      document.getElementById('input-failures').value = asset.failures;
-      document.getElementById('input-repair-time').value = asset.repairTime;
-
-      // Populate Condition Inputs Dynamically
-      const container = document.getElementById('dynamic-condition-inputs');
-      container.innerHTML = '';
-
-      for (const [key, item] of Object.entries(asset.params)) {
-        const div = document.createElement('div');
-        div.innerHTML = `
-          <label class="text-xs text-slate-300 flex justify-between mb-1">
-            <span>${item.label}</span>
-            <span class="text-slate-400 text-[10px]">${item.unit}</span>
-          </label>
-          <input type="number" id="input-param-${key}" step="0.1" value="${item.value}" oninput="updateParamValue('${key}')" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-        `;
-        container.appendChild(div);
-      }
-    }
-
-    function updateParamValue(key) {
-      const val = parseFloat(document.getElementById(`input-param-${key}`).value) || 0;
-      state.assets[state.activeAsset].params[key].value = val;
-      recalculateAll();
-    }
-
-    function resetToDefaults() {
-      if (state.activeAsset === 'TX-01') {
-        state.assets['TX-01'].opHours = 8760;
-        state.assets['TX-01'].failures = 1;
-        state.assets['TX-01'].repairTime = 5.0;
-        state.assets['TX-01'].params.h2.value = 15;
-        state.assets['TX-01'].params.c2h2.value = 0.5;
-        state.assets['TX-01'].params.moisture.value = 14;
-        state.assets['TX-01'].params.temp.value = 65;
-      } else {
-        state.assets['GIS-01'].opHours = 17520;
-        state.assets['GIS-01'].failures = 0;
-        state.assets['GIS-01'].repairTime = 0;
-        state.assets['GIS-01'].params.sf6_pressure.value = 0.58;
-        state.assets['GIS-01'].params.pd_level.value = 4.2;
-        state.assets['GIS-01'].params.sf6_moisture.value = 45;
-        state.assets['GIS-01'].params.cb_ops.value = 180;
-      }
-      populateInputs();
-      recalculateAll();
-    }
-
-    function recalculateAll() {
-      const asset = state.assets[state.activeAsset];
-      
-      // Get values from inputs
-      const opHours = parseFloat(document.getElementById('input-op-hours').value) || 1;
-      const failures = parseInt(document.getElementById('input-failures').value) || 0;
-      const totalRepairTime = parseFloat(document.getElementById('input-repair-time').value) || 0;
-
-      asset.opHours = opHours;
-      asset.failures = failures;
-      asset.repairTime = totalRepairTime;
-
-      // RAM Calculations
-      const mttr = failures > 0 ? (totalRepairTime / failures) : 0;
-      const mtbf = failures > 0 ? (opHours / failures) : opHours;
-      const lambda = (failures / opHours);
-      
-      // Availability = MTBF / (MTBF + MTTR) or (UpTime / TotalTime)
-      const availability = (opHours / (opHours + totalRepairTime)) * 100;
-
-      // Health Index Calculation based on condition weights
-      let healthScore = 100;
-      const tableBody = document.getElementById('condition-table-body');
-      tableBody.innerHTML = '';
-
-      for (const [key, item] of Object.entries(asset.params)) {
-        let status = 'ปกติ (Normal)';
-        let statusColor = 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
-        let action = 'ติดตามตามรอบปกติ';
-
-        if (item.normalMax !== undefined) {
-          if (item.value > item.warnMax) {
-            status = 'วิกฤต (Critical)';
-            statusColor = 'text-red-400 bg-red-500/10 border-red-500/20';
-            action = 'วางแผนตรวจสอบด่วน';
-            healthScore -= 20;
-          } else if (item.value > item.normalMax) {
-            status = 'เฝ้าระวัง (Warning)';
-            statusColor = 'text-amber-400 bg-amber-500/10 border-amber-500/20';
-            action = 'เพิ่มความถี่ในการตรวจวัด';
-            healthScore -= 8;
-          }
-        } else if (item.normalMin !== undefined) {
-          if (item.value < item.warnMin) {
-            status = 'วิกฤต (Critical)';
-            statusColor = 'text-red-400 bg-red-500/10 border-red-500/20';
-            action = 'หยุดเพื่อเติมก๊าซ/หาจุดรั่ว';
-            healthScore -= 25;
-          } else if (item.value < item.normalMin) {
-            status = 'เฝ้าระวัง (Warning)';
-            statusColor = 'text-amber-400 bg-amber-500/10 border-amber-500/20';
-            action = 'เตรียมเติมก๊าซ SF6';
-            healthScore -= 10;
-          }
-        }
-
-        healthScore = Math.max(20, Math.min(100, healthScore));
-
-        // Table Row
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td class="p-2.5 font-medium text-slate-200">${item.label}</td>
-          <td class="p-2.5 font-bold text-white">${item.value} ${item.unit}</td>
-          <td class="p-2.5 text-slate-400">${item.normalMax !== undefined ? '< ' + item.normalMax : '> ' + item.normalMin} ${item.unit}</td>
-          <td class="p-2.5"><span class="px-2 py-0.5 rounded text-[10px] border ${statusColor}">${status}</span></td>
-          <td class="p-2.5 text-right text-slate-400">${action}</td>
-        `;
-        tableBody.appendChild(row);
-      }
-
-      // Update UI Top Cards
-      document.getElementById('top-avail-val').textContent = availability.toFixed(3) + '%';
-      document.getElementById('top-hi-val').textContent = healthScore.toFixed(1) + '%';
-      document.getElementById('top-fail-val').textContent = failures + ' ครั้ง';
-
-      // Update RAM computed cards
-      document.getElementById('calc-mtbf').textContent = mtbf.toLocaleString(undefined, {maximumFractionDigits: 1}) + ' ชม.';
-      document.getElementById('calc-lambda').textContent = `λ = ${lambda.toFixed(6)} ครั้ง/ชม.`;
-      document.getElementById('calc-mttr').textContent = mttr.toFixed(1) + ' ชม.';
-      document.getElementById('calc-avail').textContent = availability.toFixed(3) + ' %';
-      document.getElementById('calc-downtime').textContent = `Downtime รวม: ${totalRepairTime.toFixed(1)} ชม.`;
-
-      // Render Modal Failures
-      const modalFailureRows = document.getElementById('modal-failure-rows');
-      modalFailureRows.innerHTML = '';
-      asset.failureLogs.forEach(log => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td class="p-2 text-slate-200">${log.date}</td>
-          <td class="p-2 text-slate-300">${log.cause}</td>
-          <td class="p-2 text-amber-400 font-semibold">${log.repairTime}</td>
-          <td class="p-2 text-slate-400">${log.status}</td>
-        `;
-        modalFailureRows.appendChild(tr);
-      });
-
-      renderChart(availability);
+    function initApp() {
+      renderAssetView();
       lucide.createIcons();
     }
 
-    function renderChart(currentAvail) {
-      const ctx = document.getElementById('ramChart').getContext('2d');
-      if (chartInstance) chartInstance.destroy();
+    function selectAsset(key) {
+      currentAssetKey = key;
+      
+      // Update Tab UI
+      const tabTx = document.getElementById('tab-tx');
+      const tabGis = document.getElementById('tab-gis');
+      
+      if (key === 'TX-01') {
+        tabTx.className = 'px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 bg-white text-rose-700 shadow-sm border border-rose-200/60';
+        tabGis.className = 'px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 text-slate-600 hover:text-rose-600';
+      } else {
+        tabGis.className = 'px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 bg-white text-rose-700 shadow-sm border border-rose-200/60';
+        tabTx.className = 'px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 text-slate-600 hover:text-rose-600';
+      }
 
-      const labels = ['มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.'];
-      const baseValues = [99.88, 99.92, 99.85, 99.96, 99.91];
-      baseValues.push(parseFloat(currentAvail.toFixed(2)));
+      // Populate Category Dropdown
+      populateCategoryFilter();
+      document.getElementById('search-param').value = '';
+      
+      renderAssetView();
+      lucide.createIcons();
+    }
 
-      chartInstance = new Chart(ctx, {
+    function populateCategoryFilter() {
+      const asset = appData[currentAssetKey];
+      const categories = [...new Set(asset.parameters.map(p => p.cat))];
+      const catSelect = document.getElementById('filter-category');
+      
+      catSelect.innerHTML = '<option value="ALL">ทั้งหมดทุกหมวดหมู่</option>';
+      categories.forEach(cat => {
+        const opt = document.createElement('option');
+        opt.value = cat;
+        opt.textContent = cat;
+        catSelect.appendChild(opt);
+      });
+    }
+
+    // -------------------------------------------------------------
+    // CORE CALCULATION ENGINE: RAM & Health Index
+    // -------------------------------------------------------------
+    function calculateRAMAndHealth() {
+      const asset = appData[currentAssetKey];
+      
+      const opHours = parseFloat(asset.opHours) || 1;
+      const failures = parseInt(asset.failures) || 0;
+      const repairTime = parseFloat(asset.repairTime) || 0;
+      const plannedPM = parseFloat(asset.plannedPM) || 0;
+
+      // RAM Equations
+      const mtbf = failures > 0 ? (opHours / failures) : opHours;
+      const mttr = failures > 0 ? (repairTime / failures) : 0;
+      const lambda = (failures / opHours);
+      
+      // Availability = MTBF / (MTBF + MTTR) or UpTime / (UpTime + Downtime)
+      const availability = (opHours / (opHours + repairTime)) * 100;
+
+      // Dynamic Weighted Health Index calculation based on all 40/30 params
+      let totalPenalty = 0;
+      let totalMaxWeight = 0;
+
+      asset.parameters.forEach(p => {
+        totalMaxWeight += p.weight;
+        const val = parseFloat(p.val);
+        let isCritical = false;
+        let isWarning = false;
+
+        if (p.normalMax !== undefined) {
+          if (val > p.warnMax) isCritical = true;
+          else if (val > p.normalMax) isWarning = true;
+        } else if (p.normalMin !== undefined) {
+          if (val < p.warnMin) isCritical = true;
+          else if (val < p.normalMin) isWarning = true;
+        }
+
+        if (isCritical) {
+          totalPenalty += (p.weight * 1.0); // 100% penalty of its weight
+        } else if (isWarning) {
+          totalPenalty += (p.weight * 0.35); // 35% penalty
+        }
+      });
+
+      // Health score percentage: 100 - (penalty / maxWeight * 100)
+      const calculatedHI = Math.max(15.0, Math.min(100.0, 100.0 - (totalPenalty / totalMaxWeight * 100.0)));
+
+      return {
+        mtbf,
+        mttr,
+        lambda,
+        availability,
+        calculatedHI,
+        failures,
+        repairTime,
+        opHours
+      };
+    }
+
+    // -------------------------------------------------------------
+    // RENDER MAIN DASHBOARD
+    // -------------------------------------------------------------
+    function renderAssetView() {
+      const asset = appData[currentAssetKey];
+      populateCategoryFilter();
+
+      // Top Banner
+      document.getElementById('asset-badge-type').textContent = asset.type;
+      document.getElementById('asset-badge-type').className = `px-2.5 py-0.5 rounded-full text-xs font-bold text-white ${asset.badgeColor}`;
+      document.getElementById('asset-title').textContent = asset.name;
+      document.getElementById('asset-desc').textContent = asset.desc;
+      document.getElementById('table-section-title').textContent = `รายการพารามิเตอร์ผลตรวจวัดเชิงลึก (${asset.parameters.length} พารามิเตอร์)`;
+      document.getElementById('param-count-badge').textContent = `${asset.parameters.length} พารามิเตอร์`;
+
+      // Sync inputs
+      document.getElementById('input-ram-op').value = asset.opHours;
+      document.getElementById('input-ram-failures').value = asset.failures;
+      document.getElementById('input-ram-repair').value = asset.repairTime;
+      document.getElementById('input-ram-pm').value = asset.plannedPM;
+
+      // Calculate Metrics
+      const m = calculateRAMAndHealth();
+
+      // Update KPI Cards
+      document.getElementById('kpi-avail').textContent = m.availability.toFixed(3) + ' %';
+      document.getElementById('kpi-hi').textContent = m.calculatedHI.toFixed(1) + ' %';
+      
+      const hiStatusElem = document.getElementById('kpi-hi-status');
+      if (m.calculatedHI >= 85) {
+        hiStatusElem.textContent = 'สภาพดีมาก (Good)';
+        hiStatusElem.className = 'text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200';
+      } else if (m.calculatedHI >= 70) {
+        hiStatusElem.textContent = 'เฝ้าระวัง (Moderate)';
+        hiStatusElem.className = 'text-[11px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-200';
+      } else {
+        hiStatusElem.textContent = 'วิกฤต (Poor/Critical)';
+        hiStatusElem.className = 'text-[11px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded border border-rose-300';
+      }
+
+      document.getElementById('kpi-mtbf').textContent = m.mtbf.toLocaleString(undefined, { maximumFractionDigits: 0 }) + ' ชม.';
+      document.getElementById('kpi-lambda').textContent = `λ = ${m.lambda.toFixed(6)}`;
+      document.getElementById('kpi-mttr').textContent = m.mttr.toFixed(1) + ' ชม.';
+      document.getElementById('kpi-failures-count').textContent = `ขัดข้อง ${m.failures} ครั้ง`;
+      document.getElementById('kpi-downtime-total').textContent = `เวลารวมหยุดซ่อม: ${m.repairTime.toFixed(1)} ชม.`;
+
+      // Render Category Breakdown
+      renderCategorySummary();
+
+      // Render Parameters Table
+      filterParameters();
+
+      // Render Chart
+      renderTrendChart(m.availability);
+    }
+
+    // -------------------------------------------------------------
+    // RENDER PARAMETER TABLE WITH LIVE INPUTS
+    // -------------------------------------------------------------
+    function filterParameters() {
+      const asset = appData[currentAssetKey];
+      const searchTerm = document.getElementById('search-param').value.toLowerCase().trim();
+      const selectedCat = document.getElementById('filter-category').value;
+
+      const filtered = asset.parameters.filter(p => {
+        const matchesSearch = p.name.toLowerCase().includes(searchTerm) || 
+                              p.cat.toLowerCase().includes(searchTerm) || 
+                              p.id.toLowerCase().includes(searchTerm);
+        const matchesCat = (selectedCat === 'ALL') || (p.cat === selectedCat);
+        return matchesSearch && matchesCat;
+      });
+
+      const tbody = document.getElementById('param-table-body');
+      tbody.innerHTML = '';
+
+      filtered.forEach((p, idx) => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-rose-50/40 transition border-b border-rose-100/70';
+
+        const val = parseFloat(p.val);
+        let statusText = 'ปกติ';
+        let statusBadge = 'bg-emerald-50 text-emerald-700 border-emerald-200';
+        let thresholdText = '';
+
+        if (p.normalMax !== undefined) {
+          thresholdText = `ปกติ < ${p.normalMax} ${p.unit}`;
+          if (val > p.warnMax) {
+            statusText = 'วิกฤต (Critical)';
+            statusBadge = 'bg-rose-100 text-rose-700 border-rose-300 font-bold';
+          } else if (val > p.normalMax) {
+            statusText = 'เฝ้าระวัง (Warning)';
+            statusBadge = 'bg-amber-50 text-amber-700 border-amber-300 font-bold';
+          }
+        } else if (p.normalMin !== undefined) {
+          thresholdText = `ปกติ > ${p.normalMin} ${p.unit}`;
+          if (val < p.warnMin) {
+            statusText = 'วิกฤต (Critical)';
+            statusBadge = 'bg-rose-100 text-rose-700 border-rose-300 font-bold';
+          } else if (val < p.normalMin) {
+            statusText = 'เฝ้าระวัง (Warning)';
+            statusBadge = 'bg-amber-50 text-amber-700 border-amber-300 font-bold';
+          }
+        }
+
+        tr.innerHTML = `
+          <td class="py-3 px-3 text-center text-slate-400 font-mono text-[11px]">${idx + 1}</td>
+          <td class="py-3 px-3">
+            <div class="font-bold text-slate-800">${p.name}</div>
+            <div class="text-[11px] text-slate-400">ID: ${p.id} &bull; ถ่วงน้ำหนัก ${p.weight} pts</div>
+          </td>
+          <td class="py-3 px-3">
+            <span class="px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 text-[11px] font-medium border border-rose-200/80">
+              ${p.cat}
+            </span>
+          </td>
+          <td class="py-3 px-3">
+            <div class="flex items-center gap-1.5">
+              <input type="number" step="any" value="${p.val}" oninput="updateSingleParam('${p.id}', this.value)" 
+                     class="w-24 bg-white border border-rose-200 hover:border-rose-400 focus:border-rose-500 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-800 text-right focus:outline-none focus:ring-2 focus:ring-rose-200 transition">
+              <span class="text-slate-500 text-[11px] font-medium w-12">${p.unit}</span>
+            </div>
+          </td>
+          <td class="py-3 px-3 text-slate-600 font-mono text-[11px]">
+            ${thresholdText}
+          </td>
+          <td class="py-3 px-3 text-center">
+            <span class="px-2.5 py-1 rounded-full text-[11px] border ${statusBadge}">
+              ${statusText}
+            </span>
+          </td>
+          <td class="py-3 px-3 text-center">
+            <button onclick="openParamModal('${p.id}')" class="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition" title="คลิกดูรายละเอียดเชิงลึก">
+              <i data-lucide="eye" class="w-4 h-4"></i>
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      document.getElementById('param-shown-count').textContent = `แสดง ${filtered.length} จาก ${asset.parameters.length} รายการ`;
+      lucide.createIcons();
+    }
+
+    // -------------------------------------------------------------
+    // LIVE PARAMETER UPDATE ENGINE
+    // -------------------------------------------------------------
+    function updateSingleParam(paramId, newVal) {
+      const asset = appData[currentAssetKey];
+      const p = asset.parameters.find(item => item.id === paramId);
+      if (p) {
+        p.val = parseFloat(newVal) || 0;
+        
+        // Re-calc & update KPI badges smoothly
+        const m = calculateRAMAndHealth();
+        document.getElementById('kpi-hi').textContent = m.calculatedHI.toFixed(1) + ' %';
+        
+        const hiStatusElem = document.getElementById('kpi-hi-status');
+        if (m.calculatedHI >= 85) {
+          hiStatusElem.textContent = 'สภาพดีมาก';
+          hiStatusElem.className = 'text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200';
+        } else if (m.calculatedHI >= 70) {
+          hiStatusElem.textContent = 'เฝ้าระวัง';
+          hiStatusElem.className = 'text-[11px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-200';
+        } else {
+          hiStatusElem.textContent = 'วิกฤต';
+          hiStatusElem.className = 'text-[11px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded border border-rose-300';
+        }
+
+        renderCategorySummary();
+      }
+    }
+
+    function handleRAMInput() {
+      const asset = appData[currentAssetKey];
+      asset.opHours = parseFloat(document.getElementById('input-ram-op').value) || 1;
+      asset.failures = parseInt(document.getElementById('input-ram-failures').value) || 0;
+      asset.repairTime = parseFloat(document.getElementById('input-ram-repair').value) || 0;
+      asset.plannedPM = parseFloat(document.getElementById('input-ram-pm').value) || 0;
+
+      const m = calculateRAMAndHealth();
+
+      document.getElementById('kpi-avail').textContent = m.availability.toFixed(3) + ' %';
+      document.getElementById('kpi-mtbf').textContent = m.mtbf.toLocaleString(undefined, { maximumFractionDigits: 0 }) + ' ชม.';
+      document.getElementById('kpi-lambda').textContent = `λ = ${m.lambda.toFixed(6)}`;
+      document.getElementById('kpi-mttr').textContent = m.mttr.toFixed(1) + ' ชม.';
+      document.getElementById('kpi-failures-count').textContent = `ขัดข้อง ${m.failures} ครั้ง`;
+      document.getElementById('kpi-downtime-total').textContent = `เวลารวมหยุดซ่อม: ${m.repairTime.toFixed(1)} ชม.`;
+
+      renderTrendChart(m.availability);
+    }
+
+    // -------------------------------------------------------------
+    // CATEGORY SUMMARY BREAKDOWN
+    // -------------------------------------------------------------
+    function renderCategorySummary() {
+      const asset = appData[currentAssetKey];
+      const categories = [...new Set(asset.parameters.map(p => p.cat))];
+      const listContainer = document.getElementById('category-summary-list');
+      listContainer.innerHTML = '';
+
+      categories.forEach(catName => {
+        const catParams = asset.parameters.filter(p => p.cat === catName);
+        let warnCount = 0;
+        let critCount = 0;
+
+        catParams.forEach(p => {
+          const val = parseFloat(p.val);
+          if (p.normalMax !== undefined) {
+            if (val > p.warnMax) critCount++;
+            else if (val > p.normalMax) warnCount++;
+          } else if (p.normalMin !== undefined) {
+            if (val < p.warnMin) critCount++;
+            else if (val < p.normalMin) warnCount++;
+          }
+        });
+
+        let statusBadge = '<span class="text-emerald-600 font-semibold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">ปกติทุกตัว</span>';
+        if (critCount > 0) {
+          statusBadge = `<span class="text-rose-700 font-bold bg-rose-50 px-2 py-0.5 rounded border border-rose-200">${critCount} วิกฤต</span>`;
+        } else if (warnCount > 0) {
+          statusBadge = `<span class="text-amber-700 font-bold bg-amber-50 px-2 py-0.5 rounded border border-amber-200">${warnCount} เฝ้าระวัง</span>`;
+        }
+
+        const div = document.createElement('div');
+        div.className = 'flex items-center justify-between p-2 rounded-xl bg-rose-50/40 border border-rose-100';
+        div.innerHTML = `
+          <div class="flex items-center gap-1.5 truncate pr-2">
+            <span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span>
+            <span class="font-medium text-slate-700 truncate">${catName}</span>
+          </div>
+          <div>${statusBadge}</div>
+        `;
+        listContainer.appendChild(div);
+      });
+    }
+
+    // -------------------------------------------------------------
+    // CHART.JS: PASTEL PINK THEME
+    // -------------------------------------------------------------
+    function renderTrendChart(currentAvail) {
+      const ctx = document.getElementById('ramTrendChart').getContext('2d');
+      if (trendChartInstance) trendChartInstance.destroy();
+
+      const labels = ['มี.ค. 2026', 'เม.ย. 2026', 'พ.ค. 2026', 'มิ.ย. 2026', 'ก.ค. 2026', 'ส.ค. 2026'];
+      const history = [...appData[currentAssetKey].historyAvail.slice(0, 5), parseFloat(currentAvail.toFixed(3))];
+
+      trendChartInstance = new Chart(ctx, {
         type: 'line',
         data: {
           labels: labels,
           datasets: [{
             label: 'Availability (%)',
-            data: baseValues,
-            borderColor: '#06b6d4',
-            backgroundColor: 'rgba(6, 182, 212, 0.12)',
+            data: history,
+            borderColor: '#f43f5e', // rose-500
+            backgroundColor: 'rgba(254, 205, 211, 0.35)', // soft rose pastel fill
             borderWidth: 2.5,
-            tension: 0.35,
+            tension: 0.38,
             fill: true,
-            pointBackgroundColor: '#22d3ee',
-            pointRadius: 4
+            pointBackgroundColor: '#fff',
+            pointBorderColor: '#e11d48',
+            pointBorderWidth: 2,
+            pointRadius: 4.5,
+            pointHoverRadius: 6
           }]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
-            legend: { display: false }
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: '#881337',
+              titleColor: '#fff',
+              bodyColor: '#ffe4e6',
+              padding: 10,
+              cornerRadius: 10,
+              displayColors: false,
+              callbacks: {
+                label: (ctx) => `Availability: ${ctx.raw}%`
+              }
+            }
           },
           scales: {
             y: {
               min: 99.5,
               max: 100.0,
-              grid: { color: '#1e293b' },
-              ticks: { color: '#64748b' }
+              grid: { color: '#fce7eb' },
+              ticks: { 
+                color: '#9f1239',
+                callback: (v) => v.toFixed(2) + '%'
+              }
             },
             x: {
               grid: { display: false },
-              ticks: { color: '#64748b' }
+              ticks: { color: '#881337', font: { family: 'Prompt' } }
             }
           }
         }
       });
     }
 
+    // -------------------------------------------------------------
+    // MODAL DIALOG CONTROLLERS
+    // -------------------------------------------------------------
+    function openParamModal(paramId) {
+      const asset = appData[currentAssetKey];
+      const p = asset.parameters.find(item => item.id === paramId);
+      if (!p) return;
+
+      document.getElementById('modal-param-cat').textContent = p.cat;
+      document.getElementById('modal-param-title').textContent = `${p.name} (${p.id})`;
+      document.getElementById('modal-param-val').textContent = `${p.val} ${p.unit}`;
+      
+      let standardText = '';
+      let badgeHtml = '';
+      const val = parseFloat(p.val);
+
+      if (p.normalMax !== undefined) {
+        standardText = `ค่าปกติ < ${p.normalMax} ${p.unit} (เฝ้าระวัง > ${p.warnMax} ${p.unit})`;
+        if (val > p.warnMax) {
+          badgeHtml = '<span class="bg-rose-100 text-rose-700 px-2.5 py-1 rounded-md font-bold border border-rose-300">วิกฤต (Critical Condition)</span>';
+        } else if (val > p.normalMax) {
+          badgeHtml = '<span class="bg-amber-100 text-amber-800 px-2.5 py-1 rounded-md font-bold border border-amber-300">เฝ้าระวัง (Warning State)</span>';
+        } else {
+          badgeHtml = '<span class="bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-md font-bold border border-emerald-300">ปกติ (Normal & Healthy)</span>';
+        }
+      } else if (p.normalMin !== undefined) {
+        standardText = `ค่าปกติ > ${p.normalMin} ${p.unit} (เตือนเมื่อ < ${p.warnMin} ${p.unit})`;
+        if (val < p.warnMin) {
+          badgeHtml = '<span class="bg-rose-100 text-rose-700 px-2.5 py-1 rounded-md font-bold border border-rose-300">วิกฤต (Critical Condition)</span>';
+        } else if (val < p.normalMin) {
+          badgeHtml = '<span class="bg-amber-100 text-amber-800 px-2.5 py-1 rounded-md font-bold border border-amber-300">เฝ้าระวัง (Warning State)</span>';
+        } else {
+          badgeHtml = '<span class="bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-md font-bold border border-emerald-300">ปกติ (Normal & Healthy)</span>';
+        }
+      }
+
+      document.getElementById('modal-param-standard').textContent = standardText;
+      document.getElementById('modal-param-badge').innerHTML = badgeHtml;
+      document.getElementById('modal-param-desc').textContent = p.desc;
+      document.getElementById('modal-param-action').textContent = p.action;
+
+      openModal('modal-param-detail');
+    }
+
     function openModal(id) {
+      if (id === 'modal-asset-info') {
+        const asset = appData[currentAssetKey];
+        document.getElementById('modal-specs-title').textContent = `แผ่นป้ายข้อมูลอุปกรณ์ ${asset.name}`;
+        const container = document.getElementById('modal-specs-content');
+        container.innerHTML = '';
+
+        asset.specs.forEach(s => {
+          const row = document.createElement('div');
+          row.className = 'flex justify-between py-1.5 border-b border-rose-100 text-xs';
+          row.innerHTML = `<span class="text-slate-500 font-medium">${s.label}</span><span class="text-slate-800 font-bold">${s.val}</span>`;
+          container.appendChild(row);
+        });
+      }
+
       document.getElementById(id).classList.remove('hidden');
     }
 
@@ -570,10 +1152,76 @@
       document.getElementById(id).classList.add('hidden');
     }
 
-    window.onload = () => {
-      populateInputs();
-      recalculateAll();
-    };
+    function resetAssetData() {
+      appData[currentAssetKey] = JSON.parse(JSON.stringify(rawData[currentAssetKey]));
+      renderAssetView();
+    }
+
+    // -------------------------------------------------------------
+    // PRESET SCENARIO HANDLER
+    // -------------------------------------------------------------
+    function applyPreset(type) {
+      const asset = appData[currentAssetKey];
+
+      if (type === 'ideal') {
+        asset.failures = 0;
+        asset.repairTime = 0.0;
+        asset.opHours = 8760;
+        if (currentAssetKey === 'TX-01') {
+          asset.parameters.forEach(p => {
+            if (p.id === 'tx_h2') p.val = 5;
+            if (p.id === 'tx_c2h2') p.val = 0.0;
+            if (p.id === 'tx_c2h4') p.val = 8;
+            if (p.id === 'tx_oil_moist') p.val = 8.5;
+            if (p.id === 'tx_bdv') p.val = 70.0;
+            if (p.id === 'tx_hotspot_temp') p.val = 68.0;
+          });
+        } else {
+          asset.parameters.forEach(p => {
+            if (p.id === 'gis_sf6_cb_press') p.val = 0.60;
+            if (p.id === 'gis_pd_cb_uhf') p.val = 1.2;
+            if (p.id === 'gis_sf6_purity') p.val = 99.8;
+          });
+        }
+      } else if (type === 'thermal_warning') {
+        asset.failures = 1;
+        asset.repairTime = 6.5;
+        if (currentAssetKey === 'TX-01') {
+          asset.parameters.forEach(p => {
+            if (p.id === 'tx_c2h4') p.val = 145.0; // Overheating
+            if (p.id === 'tx_top_oil_temp') p.val = 88.5;
+            if (p.id === 'tx_winding_temp_hv') p.val = 99.2;
+            if (p.id === 'tx_hotspot_temp') p.val = 118.0;
+          });
+        } else {
+          asset.parameters.forEach(p => {
+            if (p.id === 'gis_enclosure_temp') p.val = 72.0;
+            if (p.id === 'gis_res_cb_main') p.val = 52.0;
+          });
+        }
+      } else if (type === 'critical_pd') {
+        asset.failures = 3;
+        asset.repairTime = 28.0;
+        if (currentAssetKey === 'TX-01') {
+          asset.parameters.forEach(p => {
+            if (p.id === 'tx_c2h2') p.val = 4.8; // High arcing
+            if (p.id === 'tx_h2') p.val = 320.0;
+            if (p.id === 'tx_bdv') p.val = 32.0; // BDV dropped
+            if (p.id === 'tx_oil_moist') p.val = 36.0;
+            if (p.id === 'tx_pd_acoustic') p.val = 620;
+          });
+        } else {
+          asset.parameters.forEach(p => {
+            if (p.id === 'gis_sf6_cb_press') p.val = 0.495; // Under lockout
+            if (p.id === 'gis_pd_cb_uhf') p.val = 38.5; // High PD
+            if (p.id === 'gis_sf6_so2') p.val = 18.0;
+          });
+        }
+      }
+
+      closeModal('modal-preset');
+      renderAssetView();
+    }
   </script>
 </body>
 </html>

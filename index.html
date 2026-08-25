@@ -73,7 +73,21 @@
     .custom-scrollbar::-webkit-scrollbar-thumb:hover {
       background: #e28599;
     }
+
+    /* Print PDF Full-Page Optimization */
+    @page {
+      size: A4 portrait;
+      margin: 8mm 8mm 8mm 8mm;
+    }
     @media print {
+      html, body {
+        background: #ffffff !important;
+        color: #000000 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+      }
       body * {
         visibility: hidden;
       }
@@ -81,18 +95,32 @@
         visibility: visible;
       }
       #modal-checklist {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        background: white;
-        padding: 0;
-        margin: 0;
-        box-shadow: none;
-        border: none;
+        display: block !important;
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        height: auto !important;
+        max-height: none !important;
+        background: #ffffff !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        border: none !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+        z-index: 99999 !important;
+      }
+      #modal-checklist .overflow-y-auto {
+        overflow: visible !important;
+        max-height: none !important;
+        height: auto !important;
       }
       .no-print {
         display: none !important;
+      }
+      .print-border-black {
+        border-color: #cbd5e1 !important;
       }
     }
   </style>
@@ -129,7 +157,7 @@
         </div>
 
         <button onclick="openModal('modal-checklist')" class="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-rose-500 hover:bg-rose-600 text-white shadow-md shadow-rose-300/50 transition">
-          <i data-lucide="clipboard-list" class="w-4 h-4"></i> แบบตรวจสอบบำรุงรักษาหน้างาน (แบบฟอร์มเปล่า)
+          <i data-lucide="clipboard-list" class="w-4 h-4"></i> แบบตรวจสอบบำรุงรักษาหน้างาน
         </button>
 
         <button onclick="openModal('modal-preset')" class="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium bg-rose-100/70 hover:bg-rose-200/80 text-rose-800 border border-rose-200 transition">
@@ -394,23 +422,23 @@
         </div>
       </div>
 
-      <!-- Parameter Table -->
+      <!-- Parameter Table with fixed layout and responsive widths (No Text Overlap) -->
       <div class="overflow-x-auto custom-scrollbar">
-        <table class="w-full text-left text-xs">
+        <table class="w-full text-left text-xs min-w-[1050px]">
           <thead>
             <tr class="bg-rose-50/80 text-rose-900 border-b border-rose-200">
               <th class="py-3 px-3 rounded-l-xl font-bold w-12 text-center">#</th>
-              <th class="py-3 px-3 font-bold">พารามิเตอร์ & ตัวชี้วัด</th>
-              <th class="py-3 px-3 font-bold">หมวดหมู่ (Category)</th>
-              <th class="py-3 px-3 font-bold w-44">ค่าที่วัดได้ (พิมพ์แก้ไขได้)</th>
-              <th class="py-3 px-3 font-bold">เกณฑ์มาตรฐาน (Threshold)</th>
-              <th class="py-3 px-3 font-bold text-center">สถานะ</th>
-              <th class="py-3 px-3 font-bold">ข้อเสนอแนะในการบำรุงรักษา (Action)</th>
+              <th class="py-3 px-3 font-bold w-60">พารามิเตอร์ & ตัวชี้วัด</th>
+              <th class="py-3 px-3 font-bold w-44">หมวดหมู่ (Category)</th>
+              <th class="py-3 px-3 font-bold w-48">ค่าที่วัดได้ (พิมพ์แก้ไขได้)</th>
+              <th class="py-3 px-3 font-bold w-40">เกณฑ์มาตรฐาน</th>
+              <th class="py-3 px-3 font-bold w-36 text-center">สถานะ</th>
+              <th class="py-3 px-3 font-bold min-w-[220px]">ข้อเสนอแนะในการบำรุงรักษา</th>
               <th class="py-3 px-3 rounded-r-xl font-bold text-center w-16">ดู</th>
             </tr>
           </thead>
           <tbody id="param-table-body" class="divide-y divide-rose-100">
-            <!-- Dynamically Rendered 40 or 30 rows with live status recalculation -->
+            <!-- Dynamically Rendered rows -->
           </tbody>
         </table>
       </div>
@@ -425,7 +453,7 @@
 
   </main>
 
-  <!-- ==================== MODAL: FIELD MAINTENANCE CHECKLIST (BLANK PAPER FORM FOR ON-SITE ENGINEER) ==================== -->
+  <!-- ==================== MODAL: FIELD MAINTENANCE CHECKLIST (PRINT-OPTIMIZED BLANK A4 PAPER FORM) ==================== -->
   <div id="modal-checklist" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-2 sm:p-4">
     <div class="bg-white border border-rose-300 rounded-3xl max-w-4xl w-full p-5 sm:p-7 shadow-2xl max-h-[92vh] flex flex-col overflow-hidden">
       
@@ -452,7 +480,7 @@
       <div class="overflow-y-auto custom-scrollbar flex-1 space-y-4 text-xs pr-1 pt-3 text-slate-700">
         
         <!-- SECTION 1: ข้อมูลทั่วไป -->
-        <div class="border border-rose-200 rounded-2xl p-3.5 bg-rose-50/40 space-y-2.5">
+        <div class="border border-rose-200 print-border-black rounded-2xl p-3.5 bg-rose-50/40 space-y-2.5">
           <div class="font-bold text-rose-800 flex items-center gap-1.5 text-xs">
             <span class="w-5 h-5 rounded-full bg-rose-500 text-white flex items-center justify-center text-[10px]">1</span>
             ข้อมูลทั่วไป (General Information)[cite: 2]
@@ -494,7 +522,7 @@
         </div>
 
         <!-- SECTION 2: รายการตรวจสอบบำรุงรักษา (Blank Checkboxes & Open Reasons) -->
-        <div class="border border-rose-200 rounded-2xl p-3.5 bg-white space-y-2.5">
+        <div class="border border-rose-200 print-border-black rounded-2xl p-3.5 bg-white space-y-2.5">
           <div class="font-bold text-rose-800 flex items-center justify-between text-xs">
             <div class="flex items-center gap-1.5">
               <span class="w-5 h-5 rounded-full bg-rose-500 text-white flex items-center justify-center text-[10px]">2</span>
@@ -523,7 +551,7 @@
         </div>
 
         <!-- SECTION 3: ตรวจสอบวัดกระแสและแรงดันไฟฟ้า & RAM Metrics (Blank Inputs) -->
-        <div class="border border-rose-200 rounded-2xl p-3.5 bg-rose-50/40 space-y-2.5">
+        <div class="border border-rose-200 print-border-black rounded-2xl p-3.5 bg-rose-50/40 space-y-2.5">
           <div class="font-bold text-rose-800 flex items-center gap-1.5 text-xs">
             <span class="w-5 h-5 rounded-full bg-rose-500 text-white flex items-center justify-center text-[10px]">3</span>
             ตรวจสอบวัดกระแส แรงดันไฟฟ้า และดัชนี RAM (Electrical & RAM Assessment)[cite: 2]
@@ -531,7 +559,7 @@
           
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-[11px]">
             <!-- Electrical Values -->
-            <div class="bg-white p-3 rounded-xl border border-rose-200 space-y-2">
+            <div class="bg-white p-3 rounded-xl border border-rose-200 print-border-black space-y-2">
               <div class="flex justify-between items-center border-b border-rose-100 pb-1.5">
                 <span class="font-semibold text-slate-700">ช่วงเวลาและวิธีการตรวจวัด:[cite: 2]</span>
                 <div class="flex gap-3">
@@ -560,7 +588,7 @@
             </div>
 
             <!-- RAM Metrics Assessment -->
-            <div class="bg-white p-3 rounded-xl border border-rose-200 space-y-2">
+            <div class="bg-white p-3 rounded-xl border border-rose-200 print-border-black space-y-2">
               <span class="font-semibold text-slate-700 block border-b border-rose-100 pb-1.5">ค่าความเชื่อถือได้ (RAM) ที่บันทึกได้หน้างาน:</span>
               <div class="grid grid-cols-2 gap-2 text-[11px]">
                 <div>
@@ -585,7 +613,7 @@
         </div>
 
         <!-- SECTION 4: สิ่งที่ต้องปรับปรุงหรือข้อมูลเพิ่มเติม -->
-        <div class="border border-rose-200 rounded-2xl p-3.5 bg-white space-y-2">
+        <div class="border border-rose-200 print-border-black rounded-2xl p-3.5 bg-white space-y-2">
           <div class="font-bold text-rose-800 flex items-center gap-1.5 text-xs">
             <span class="w-5 h-5 rounded-full bg-rose-500 text-white flex items-center justify-center text-[10px]">4</span>
             สิ่งที่ต้องปรับปรุงหรือข้อมูลเพิ่มเติม :[cite: 2]
@@ -594,7 +622,7 @@
         </div>
 
         <!-- SECTION 5: การลงนามรับรองผลและปรับปรุงข้อบกพร่อง -->
-        <div class="border border-rose-200 rounded-2xl p-3.5 bg-rose-50/40 space-y-2.5">
+        <div class="border border-rose-200 print-border-black rounded-2xl p-3.5 bg-rose-50/40 space-y-2.5">
           <div class="font-bold text-rose-800 flex items-center gap-1.5 text-xs">
             <span class="w-5 h-5 rounded-full bg-rose-500 text-white flex items-center justify-center text-[10px]">5</span>
             การลงนามรับรองและการปรับปรุงข้อบกพร่อง :[cite: 2]
@@ -602,7 +630,7 @@
           
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[11px]">
             <!-- Inspector Block -->
-            <div class="bg-white p-3 rounded-xl border border-rose-200 space-y-1.5">
+            <div class="bg-white p-3 rounded-xl border border-rose-200 print-border-black space-y-1.5">
               <span class="text-rose-700 font-bold block">ผู้ตรวจสอบ (Inspector):[cite: 2]</span>
               <div class="flex items-center gap-2">
                 <span class="text-slate-500 w-16">ผู้ตรวจ:[cite: 2]</span>
@@ -619,7 +647,7 @@
             </div>
 
             <!-- Approver Block -->
-            <div class="bg-white p-3 rounded-xl border border-rose-200 space-y-1.5">
+            <div class="bg-white p-3 rounded-xl border border-rose-200 print-border-black space-y-1.5">
               <span class="text-slate-700 font-bold block">ผู้ควบคุมงาน / หัวหน้าแผนก (Approved By):</span>
               <div class="flex items-center gap-2">
                 <span class="text-slate-500 w-16">ผู้ตรวจ:</span>
@@ -1189,7 +1217,7 @@
     }
 
     // -------------------------------------------------------------
-    // RENDER PARAMETERS TABLE WITH LIVE STATUS & RECOMMENDATION RECALCULATION
+    // RENDER PARAMETERS TABLE (NO OVERLAP, DISTINCT COLUMNS)
     // -------------------------------------------------------------
     function filterParameters() {
       const asset = appData[currentAssetKey];
@@ -1243,12 +1271,12 @@
 
         tr.innerHTML = `
           <td class="py-3 px-3 text-center text-slate-400 font-mono text-[11px]">${idx + 1}</td>
-          <td class="py-3 px-3">
-            <div class="font-bold text-slate-800">${p.name}</div>
-            <div class="text-[11px] text-slate-400">ID: ${p.id} &bull; น้ำหนัก ${p.weight} pts</div>
+          <td class="py-3 px-3 font-semibold text-slate-800">
+            <div>${p.name}</div>
+            <div class="text-[10px] text-slate-400 font-normal">ID: ${p.id} &bull; น้ำหนัก ${p.weight} pts</div>
           </td>
           <td class="py-3 px-3">
-            <span class="px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 text-[11px] font-medium border border-rose-200/80">
+            <span class="px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 text-[10px] font-medium border border-rose-200/80 inline-block">
               ${p.cat}
             </span>
           </td>
@@ -1256,18 +1284,18 @@
             <div class="flex items-center gap-1.5">
               <input type="number" step="any" value="${p.val}" oninput="updateSingleParam('${p.id}', this.value)" 
                      class="w-24 bg-white border border-rose-200 hover:border-rose-400 focus:border-rose-500 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-800 text-right focus:outline-none focus:ring-2 focus:ring-rose-200 transition">
-              <span class="text-slate-500 text-[11px] font-medium w-12">${p.unit}</span>
+              <span class="text-slate-500 text-[11px] font-medium">${p.unit}</span>
             </div>
           </td>
           <td class="py-3 px-3 text-slate-600 font-mono text-[11px]">
             ${thresholdText}
           </td>
           <td class="py-3 px-3 text-center">
-            <span class="px-2.5 py-1 rounded-full text-[11px] border ${statusBadge}">
+            <span class="px-2.5 py-1 rounded-full text-[10px] border whitespace-nowrap inline-block ${statusBadge}">
               ${statusText}
             </span>
           </td>
-          <td class="py-3 px-3 text-slate-700 text-xs font-medium">
+          <td class="py-3 px-3 text-slate-700 text-xs font-medium leading-relaxed">
             ${dynamicAction}
           </td>
           <td class="py-3 px-3 text-center">
@@ -1304,7 +1332,7 @@
         }
 
         renderCategorySummary();
-        filterParameters(); // re-render table to instantly update status badge and action
+        filterParameters();
       }
     }
 
@@ -1351,7 +1379,7 @@
     }
 
     // -------------------------------------------------------------
-    // RENDER SECTION 2: BLANK CHECKLIST ROWS (FOR ON-SITE ENGINEERS TO TICK & WRITE)
+    // RENDER SECTION 2: BLANK CHECKLIST ROWS (BLANK FORM TO TICK & WRITE)
     // -------------------------------------------------------------
     function renderBlankChecklistTable() {
       const asset = appData[currentAssetKey];

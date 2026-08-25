@@ -73,6 +73,25 @@
     .custom-scrollbar::-webkit-scrollbar-thumb:hover {
       background: #e28599;
     }
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+      #modal-checklist, #modal-checklist * {
+        visibility: visible;
+      }
+      #modal-checklist {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        background: white;
+        padding: 0;
+      }
+      .no-print {
+        display: none !important;
+      }
+    }
   </style>
 </head>
 <body class="text-slate-700 min-h-screen pb-16">
@@ -95,7 +114,7 @@
         </div>
       </div>
 
-      <!-- Asset Switcher & Preset Buttons -->
+      <!-- Asset Switcher & Field Checklist Action -->
       <div class="flex items-center gap-3">
         <div class="flex items-center bg-rose-50 border border-rose-200 rounded-xl p-1 shadow-inner">
           <button id="tab-tx" onclick="selectAsset('TX-01')" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 bg-white text-rose-700 shadow-sm border border-rose-200/60">
@@ -106,8 +125,8 @@
           </button>
         </div>
 
-        <button onclick="openModal('modal-checklist')" class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-rose-500 hover:bg-rose-600 text-white shadow-sm shadow-rose-300/50 transition">
-          <i data-lucide="clipboard-check" class="w-4 h-4"></i> แบบตรวจเช็กหน้างาน
+        <button onclick="openModal('modal-checklist')" class="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-rose-500 hover:bg-rose-600 text-white shadow-md shadow-rose-300/50 transition">
+          <i data-lucide="clipboard-list" class="w-4 h-4"></i> แบบตรวจสอบบำรุงรักษาหน้างาน
         </button>
 
         <button onclick="openModal('modal-preset')" class="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium bg-rose-100/70 hover:bg-rose-200/80 text-rose-800 border border-rose-200 transition">
@@ -402,58 +421,227 @@
 
   </main>
 
-  <!-- ==================== MODAL: FIELD MAINTENANCE CHECKLIST ==================== -->
-  <div id="modal-checklist" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white border border-rose-200 rounded-3xl max-w-2xl w-full p-6 space-y-4 shadow-xl max-h-[90vh] flex flex-col">
-      <div class="flex items-center justify-between border-b border-rose-100 pb-3">
-        <div class="flex items-center gap-2">
-          <div class="p-2 rounded-lg bg-rose-500 text-white shadow-md shadow-rose-200">
-            <i data-lucide="clipboard-check" class="w-5 h-5"></i>
+  <!-- ==================== MODAL: FIELD MAINTENANCE CHECKLIST (PATTERN FROM OFFICIAL SUBSTATION FORM) ==================== -->
+  <div id="modal-checklist" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-2 sm:p-4">
+    <div class="bg-white border border-rose-300 rounded-3xl max-w-4xl w-full p-5 sm:p-7 shadow-2xl max-h-[92vh] flex flex-col overflow-hidden">
+      
+      <!-- Form Header -->
+      <div class="flex items-center justify-between border-b-2 border-rose-200 pb-3">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-rose-500 text-white flex items-center justify-center shadow-md shadow-rose-300/50">
+            <i data-lucide="file-check" class="w-5 h-5"></i>
           </div>
           <div>
-            <h3 class="font-bold text-base text-slate-800">แบบฟอร์มตรวจสอบการบำรุงรักษาอุปกรณ์สำหรับวิศวกรหน้างาน</h3>
-            <p class="text-xs text-slate-500">บันทึกผลการตรวจสอบภาคสนาม (Field Inspection & Routine Check)</p>
+            <h3 class="font-bold text-base sm:text-lg text-slate-900 leading-tight">แบบตรวจสอบบำรุงรักษาอุปกรณ์สถานีไฟฟ้าแรงสูง (Field Maintenance Form)</h3>
+            <p class="text-[11px] text-slate-500">รหัสแบบฟอร์ม: ENG-RAM-FM-01 | ปรับปรุงครั้งที่ 0 วันที่: 25/08/2026[cite: 2]</p>
           </div>
         </div>
-        <button onclick="closeModal('modal-checklist')" class="text-slate-400 hover:text-rose-600"><i data-lucide="x" class="w-5 h-5"></i></button>
-      </div>
-
-      <!-- Inspector Info -->
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-rose-50/60 p-3.5 rounded-2xl border border-rose-200/80 text-xs">
-        <div>
-          <label class="block text-slate-500 font-medium mb-1">วิศวกรผู้ตรวจสอบ:</label>
-          <input type="text" id="inspector-name" value="สุวนันทน์ (วิศวกร)" class="w-full bg-white border border-rose-200 rounded-lg px-2.5 py-1 font-bold text-rose-800">
-        </div>
-        <div>
-          <label class="block text-slate-500 font-medium mb-1">วันที่และเวลาตรวจสอบ:</label>
-          <input type="text" id="inspect-date" value="25 ส.ค. 2026, 14:00 น." class="w-full bg-white border border-rose-200 rounded-lg px-2.5 py-1 text-slate-700">
-        </div>
-        <div>
-          <label class="block text-slate-500 font-medium mb-1">อุปกรณ์ที่ตรวจสอบ:</label>
-          <input type="text" id="inspect-asset-display" value="TX-01 Power Transformer" readonly class="w-full bg-white/70 border border-rose-200 rounded-lg px-2.5 py-1 font-semibold text-slate-700">
+        <div class="flex items-center gap-2 no-print">
+          <button onclick="window.print()" class="p-2 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-semibold flex items-center gap-1">
+            <i data-lucide="printer" class="w-4 h-4"></i> พิมพ์
+          </button>
+          <button onclick="closeModal('modal-checklist')" class="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg transition"><i data-lucide="x" class="w-5 h-5"></i></button>
         </div>
       </div>
 
-      <!-- Checklist Items Container (Scrollable) -->
-      <div class="overflow-y-auto custom-scrollbar flex-1 space-y-2.5 text-xs pr-1">
-        <h4 class="font-bold text-slate-800 flex items-center gap-1.5">
-          <i data-lucide="check-square" class="w-4 h-4 text-rose-500"></i> รายการตรวจสอบทางเทคนิค:
-        </h4>
-        <div id="checklist-items" class="space-y-2">
-          <!-- Dynamic checklist items -->
+      <!-- Form Body: 5 Official Sections -->
+      <div class="overflow-y-auto custom-scrollbar flex-1 space-y-4 text-xs pr-1 pt-3 text-slate-700">
+        
+        <!-- SECTION 1: ข้อมูลทั่วไป -->
+        <div class="border border-rose-200 rounded-2xl p-3.5 bg-rose-50/40 space-y-2.5">
+          <div class="font-bold text-rose-800 flex items-center gap-1.5 text-xs">
+            <span class="w-5 h-5 rounded-full bg-rose-500 text-white flex items-center justify-center text-[10px]">1</span>
+            ข้อมูลทั่วไป (General Information)[cite: 2]
+          </div>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-[11px]">
+            <div>
+              <span class="text-slate-500 block">Station ID:[cite: 2]</span>
+              <input type="text" value="MBT0399 (Substation 115/22kV)" class="w-full bg-white border border-rose-200 rounded px-2 py-1 font-semibold text-slate-800 text-xs">
+            </div>
+            <div>
+              <span class="text-slate-500 block">สถานที่ / Location:[cite: 2]</span>
+              <input type="text" value="ถ.ประเสริฐมนูกิจ (351)" class="w-full bg-white border border-rose-200 rounded px-2 py-1 text-slate-800 text-xs">
+            </div>
+            <div>
+              <span class="text-slate-500 block">GIS Lat:[cite: 2]</span>
+              <input type="text" value="13.807466" class="w-full bg-white border border-rose-200 rounded px-2 py-1 text-slate-800 text-xs">
+            </div>
+            <div>
+              <span class="text-slate-500 block">GIS Long:[cite: 2]</span>
+              <input type="text" value="100.657294" class="w-full bg-white border border-rose-200 rounded px-2 py-1 text-slate-800 text-xs">
+            </div>
+            <div>
+              <span class="text-slate-500 block">MEA No. / Asset ID:[cite: 2]</span>
+              <input type="text" id="chk-asset-id" value="TX-01 (115/22 kV 50 MVA)" class="w-full bg-white border border-rose-200 rounded px-2 py-1 font-bold text-rose-700 text-xs">
+            </div>
+            <div>
+              <span class="text-slate-500 block">ยี่ห้อ / Brand:[cite: 2]</span>
+              <input type="text" value="ABB / Hitachi Energy" class="w-full bg-white border border-rose-200 rounded px-2 py-1 text-slate-800 text-xs">
+            </div>
+            <div>
+              <span class="text-slate-500 block">ชนิด / Type:[cite: 2]</span>
+              <input type="text" value="Oil-Immersed / SF6 GIS" class="w-full bg-white border border-rose-200 rounded px-2 py-1 text-slate-800 text-xs">
+            </div>
+            <div>
+              <span class="text-slate-500 block">ลักษณะการติดตั้ง:[cite: 2]</span>
+              <input type="text" value="Substation Transformer Yard" class="w-full bg-white border border-rose-200 rounded px-2 py-1 text-slate-800 text-xs">
+            </div>
+          </div>
         </div>
 
-        <div class="pt-2">
-          <label class="block font-bold text-slate-700 mb-1">ข้อเสนอแนะเพิ่มเติมของวิศวกร:</label>
-          <textarea id="inspect-notes" rows="2" placeholder="ระบุสิ่งที่ตรวจพบเพิ่มเติม เช่น พบฝุ่นเกาะ หรือมีเสียงรบกวน..." class="w-full bg-rose-50/30 border border-rose-200 rounded-xl p-2 text-xs focus:outline-none focus:ring-2 focus:ring-rose-400"></textarea>
+        <!-- SECTION 2: รายการตรวจสอบบำรุงรักษา (Table with checkboxes) -->
+        <div class="border border-rose-200 rounded-2xl p-3.5 bg-white space-y-2.5">
+          <div class="font-bold text-rose-800 flex items-center justify-between text-xs">
+            <div class="flex items-center gap-1.5">
+              <span class="w-5 h-5 rounded-full bg-rose-500 text-white flex items-center justify-center text-[10px]">2</span>
+              รายการตรวจสอบบำรุงรักษา (Maintenance Checklist Items)[cite: 2]
+            </div>
+            <span class="text-[11px] text-slate-400 font-normal">ติ๊กเลือกผลการตรวจสอบหน้างาน[cite: 2]</span>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-[11px] border border-rose-100 rounded-lg">
+              <thead class="bg-rose-100/70 text-rose-950 font-bold">
+                <tr>
+                  <th class="p-2 w-8 text-center">#</th>
+                  <th class="p-2">รายการตรวจสอบ (Inspection Items)[cite: 2]</th>
+                  <th class="p-2 w-16 text-center">ปกติ[cite: 2]</th>
+                  <th class="p-2 w-16 text-center">ชำรุด[cite: 2]</th>
+                  <th class="p-2 w-16 text-center">ไม่มี[cite: 2]</th>
+                  <th class="p-2">ข้อบกพร่อง / ค่าที่วัดได้หน้างาน[cite: 2]</th>
+                </tr>
+              </thead>
+              <tbody id="pattern-checklist-rows" class="divide-y divide-rose-100">
+                <!-- Checklist items injected here -->
+              </tbody>
+            </table>
+          </div>
         </div>
+
+        <!-- SECTION 3: ตรวจสอบวัดกระแสและแรงดันไฟฟ้า & RAM Metrics -->
+        <div class="border border-rose-200 rounded-2xl p-3.5 bg-rose-50/40 space-y-2.5">
+          <div class="font-bold text-rose-800 flex items-center gap-1.5 text-xs">
+            <span class="w-5 h-5 rounded-full bg-rose-500 text-white flex items-center justify-center text-[10px]">3</span>
+            ตรวจสอบวัดกระแส แรงดันไฟฟ้า และดัชนี RAM (Electrical & RAM Assessment)[cite: 2]
+          </div>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-[11px]">
+            <!-- Electrical Values -->
+            <div class="bg-white p-3 rounded-xl border border-rose-200 space-y-2">
+              <div class="flex justify-between items-center border-b border-rose-100 pb-1.5">
+                <span class="font-semibold text-slate-700">ช่วงเวลาตรวจวัด:[cite: 2]</span>
+                <div class="flex gap-3">
+                  <label class="flex items-center gap-1"><input type="radio" name="chk-time-mode" checked class="accent-rose-500"> กลางวัน[cite: 2]</label>
+                  <label class="flex items-center gap-1"><input type="radio" name="chk-time-mode" class="accent-rose-500"> กลางคืน[cite: 2]</label>
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <span class="text-slate-500 block">แรงดันไฟฟ้า (V / kV):[cite: 2]</span>
+                  <input type="text" value="V1-N=22.1kV, V2-N=22.0kV, V3-N=22.1kV" class="w-full bg-rose-50/40 border border-rose-200 rounded px-2 py-1 text-[10px]">
+                </div>
+                <div>
+                  <span class="text-slate-500 block">แรงดัน Line-to-Line:[cite: 2]</span>
+                  <input type="text" value="V1-2=115.2kV, V2-3=115.1kV" class="w-full bg-rose-50/40 border border-rose-200 rounded px-2 py-1 text-[10px]">
+                </div>
+                <div>
+                  <span class="text-slate-500 block">กระแสไฟฟ้า (A):[cite: 2]</span>
+                  <input type="text" value="I1=210A, I2=205A, I3=212A, IN=34A" class="w-full bg-rose-50/40 border border-rose-200 rounded px-2 py-1 text-[10px]">
+                </div>
+                <div>
+                  <span class="text-slate-500 block">ผลรวมกระแสหน้าหม้อแปลง:[cite: 2]</span>
+                  <input type="text" value="Σ I = 627 A (48% Full Load)" class="w-full bg-rose-50/40 border border-rose-200 rounded px-2 py-1 font-semibold text-rose-700 text-[10px]">
+                </div>
+              </div>
+            </div>
+
+            <!-- RAM Metrics Assessment -->
+            <div class="bg-white p-3 rounded-xl border border-rose-200 space-y-2">
+              <span class="font-semibold text-slate-700 block border-b border-rose-100 pb-1.5">ค่าความเชื่อถือได้ (RAM) ณ วันที่ตรวจสอบ:</span>
+              <div class="grid grid-cols-2 gap-2 text-[11px]">
+                <div class="p-1.5 bg-rose-50/50 rounded border border-rose-100">
+                  <span class="text-slate-500 block text-[10px]">Availability (A):</span>
+                  <span id="chk-ram-avail" class="font-bold text-rose-700 text-xs">99.943% (ผ่านเกณฑ์ ≥ 96%)</span>
+                </div>
+                <div class="p-1.5 bg-rose-50/50 rounded border border-rose-100">
+                  <span class="text-slate-500 block text-[10px]">Health Index (HI):</span>
+                  <span id="chk-ram-hi" class="font-bold text-pink-700 text-xs">91.4% (สภาพดีมาก)</span>
+                </div>
+                <div class="p-1.5 bg-rose-50/50 rounded border border-rose-100">
+                  <span class="text-slate-500 block text-[10px]">Reliability (MTBF):</span>
+                  <span id="chk-ram-mtbf" class="font-bold text-slate-800 text-xs">8,760 ชม.</span>
+                </div>
+                <div class="p-1.5 bg-rose-50/50 rounded border border-rose-100">
+                  <span class="text-slate-500 block text-[10px]">Maintainability (MTTR):</span>
+                  <span id="chk-ram-mttr" class="font-bold text-slate-800 text-xs">5.0 ชม.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 4: สิ่งที่ต้องปรับปรุงหรือข้อมูลเพิ่มเติม -->
+        <div class="border border-rose-200 rounded-2xl p-3.5 bg-white space-y-2">
+          <div class="font-bold text-rose-800 flex items-center gap-1.5 text-xs">
+            <span class="w-5 h-5 rounded-full bg-rose-500 text-white flex items-center justify-center text-[10px]">4</span>
+            สิ่งที่ต้องปรับปรุงหรือข้อมูลเพิ่มเติม :[cite: 2]
+          </div>
+          <textarea rows="2" class="w-full bg-rose-50/30 border border-rose-200 rounded-xl p-2.5 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-rose-400">วงจรตามแบบ อป. หน้าหม้อแปลงปกติ, ค่าความพร้อมใช้งาน (Availability) ผ่านเกณฑ์มาตรฐาน 96.0% อุปกรณ์พร้อมจ่ายพลังงานไฟฟ้าต่อเนื่อง[cite: 2]</textarea>
+        </div>
+
+        <!-- SECTION 5: การลงนามรับรองผลและปรับปรุงข้อบกพร่อง -->
+        <div class="border border-rose-200 rounded-2xl p-3.5 bg-rose-50/40 space-y-2.5">
+          <div class="font-bold text-rose-800 flex items-center gap-1.5 text-xs">
+            <span class="w-5 h-5 rounded-full bg-rose-500 text-white flex items-center justify-center text-[10px]">5</span>
+            การลงนามรับรองและการปรับปรุงข้อบกพร่อง :[cite: 2]
+          </div>
+          
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[11px]">
+            <!-- Inspector Block -->
+            <div class="bg-white p-3 rounded-xl border border-rose-200 space-y-1.5">
+              <span class="text-rose-700 font-bold block">ผู้ตรวจสอบ (Inspector):[cite: 2]</span>
+              <div class="flex items-center gap-2">
+                <span class="text-slate-500 w-16">ผู้ตรวจ:[cite: 2]</span>
+                <input type="text" value="สุวนันทน์" class="flex-1 font-bold text-rose-800 bg-rose-50/50 border border-rose-200 rounded px-2 py-1 text-xs">
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-slate-500 w-16">ตำแหน่ง:[cite: 2]</span>
+                <input type="text" value="วิศวกรไฟฟ้า / วิศวกรผู้รับผิดชอบงานบำรุงรักษา" class="flex-1 text-slate-700 bg-rose-50/50 border border-rose-200 rounded px-2 py-1 text-xs">
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-slate-500 w-16">วันที่:[cite: 2]</span>
+                <input type="text" value="08/25/2026" class="flex-1 text-slate-700 bg-rose-50/50 border border-rose-200 rounded px-2 py-1 text-xs">
+              </div>
+            </div>
+
+            <!-- Approver Block -->
+            <div class="bg-white p-3 rounded-xl border border-rose-200 space-y-1.5">
+              <span class="text-slate-700 font-bold block">ผู้ควบคุมงาน / หัวหน้าแผนก (Approved By):</span>
+              <div class="flex items-center gap-2">
+                <span class="text-slate-500 w-16">ผู้ตรวจ:</span>
+                <input type="text" placeholder="ลงชื่อหัวหน้างาน..." class="flex-1 bg-slate-50 border border-slate-200 rounded px-2 py-1 text-xs">
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-slate-500 w-16">ตำแหน่ง:</span>
+                <input type="text" value="หัวหน้าแผนกสถานีไฟฟ้าแรงสูง" class="flex-1 text-slate-700 bg-slate-50 border border-slate-200 rounded px-2 py-1 text-xs">
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-slate-500 w-16">วันที่:</span>
+                <input type="text" value="08/25/2026" class="flex-1 text-slate-700 bg-slate-50 border border-slate-200 rounded px-2 py-1 text-xs">
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
 
       <!-- Footer Buttons -->
-      <div class="flex items-center justify-between pt-3 border-t border-rose-100">
-        <span id="checklist-status-text" class="text-xs font-semibold text-emerald-600">✓ ตรวจสอบครบถ้วน พร้อมบันทึก</span>
+      <div class="flex items-center justify-between pt-3 border-t border-rose-100 no-print">
+        <span class="text-xs font-semibold text-emerald-600 flex items-center gap-1">
+          <i data-lucide="check-circle" class="w-4 h-4"></i> พร้อมบันทึกหรือออกรายงาน PDF
+        </span>
         <div class="flex gap-2">
-          <button onclick="saveChecklist()" class="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-xl text-xs font-bold shadow-md shadow-rose-200 flex items-center gap-1.5 transition">
+          <button onclick="saveFieldInspection()" class="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-xl text-xs font-bold shadow-md shadow-rose-200 flex items-center gap-1.5 transition">
             <i data-lucide="save" class="w-3.5 h-3.5"></i> บันทึกรายงานการตรวจสอบ
           </button>
           <button onclick="closeModal('modal-checklist')" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-medium">
@@ -461,6 +649,7 @@
           </button>
         </div>
       </div>
+
     </div>
   </div>
 
@@ -639,15 +828,21 @@
           { label: 'น้ำหนักรวม (Total Weight)', val: '68,500 kg (Oil: 18,200 kg)' },
           { label: 'วิศวกรผู้รับผิดชอบ', val: 'สุวนันทน์ (วิศวกร)' }
         ],
-        checklist: [
-          { title: 'ตรวจวัดอุณหภูมิผิวถังและบุชชิ่งด้วยกล้องอินฟราเรด (Thermoscan)', pass: true },
-          { title: 'ตรวจสอบระดับน้ำมันที่ถังพัก (Conservator Tank Oil Level)', pass: true },
-          { title: 'ตรวจสอบสีสารดูดความชื้นซิลิกาเจล (Silica Gel Breather Condition)', pass: true },
-          { title: 'ตรวจสอบการทำงานของชุดพัดลมระบายความร้อน ONAF Stage 1 & 2', pass: true },
-          { title: 'ตรวจสอบแรงดันก๊าซไนโตรเจนคลุมผิวหน้า (N2 Cushion Pressure)', pass: true },
-          { title: 'ตรวจสอบความสมบูรณ์ของจุดต่อลงดินหลัก (Main Tank & Core Grounding)', pass: true },
-          { title: 'ตรวจสอบการรั่วซึมของน้ำมันตามหน้าแปลนและวาล์ว (Oil Leakage Inspection)', pass: true },
-          { title: 'ทดสอบระบบส่งสัญญาณเตือน Buchholz & PRD Alarm', pass: true }
+        checklistPattern: [
+          { num: '2.1', name: 'Drop Fuse / สวิตช์ตัดตอนแรงสูง', status: 'normal', detail: 'สภาพสมบูรณ์ ไม่พบรอยไหม้' },
+          { num: '2.2', name: 'Station Post Type Insulator', status: 'normal', detail: 'ผิวฉนวนแห้งสะอาด ไม่มีรอยร้าว' },
+          { num: '2.3', name: 'สายเข้า-ออก Drop Fuse', status: 'normal', detail: 'การเข้าหัวสายแน่นหนา' },
+          { num: '2.4', name: 'คอนสายและโครงสร้างเหล็กยึด', status: 'normal', detail: 'โครงสร้างแข็งแรง ไม่พบคราบสนิม' },
+          { num: '2.5', name: 'อุปกรณ์ป้องกันสัตว์ (Animal Guard)', status: 'normal', detail: 'ติดตั้งครอบคลุมทุกจุด' },
+          { num: '2.6', name: 'Low Voltage Capacitor Bank', status: 'none', detail: 'ไม่มีติดตั้งใน Bay นี้' },
+          { num: '2.7', name: 'กับดักฟ้าผ่า (Surge Arrester L/A)', status: 'normal', detail: 'ตัวนับ Surge ทำงานปกติ' },
+          { num: '2.8', name: 'ตัวถังหม้อแปลง (Main Tank & Conservator)', status: 'normal', detail: 'ระดับน้ำมัน 55%, ไม่พบน้ำมันซึม' },
+          { num: '2.9', name: 'Bushing HV-LV & สปาร์คแก๊ป', status: 'normal', detail: 'ผิว Porcelain สะอาด ค่า tan δ ปกติ' },
+          { num: '2.10', name: 'Cover (Bushing, L/A, Term. kit)', status: 'normal', detail: 'ฝาครอบป้องกันแน่นหนา' },
+          { num: '2.11', name: 'สายหน้าหม้อแปลง LV และขั้วต่อ', status: 'normal', detail: 'สแกน Thermoscan อุณหภูมิปกติ' },
+          { num: '2.12', name: 'LV Ground & Neutral Grounding', status: 'normal', detail: 'สายดินแน่นหนา ความต้านทานดิน < 5 Ω' },
+          { num: '2.13', name: 'HV Ground & Core Grounding', status: 'normal', detail: 'กระแสรั่วแกนเหล็ก 42 mA (ปกติ)' },
+          { num: '2.14', name: 'CT-TLM Meter & RTU Interface', status: 'normal', detail: 'ส่งข้อมูล Telemetry ถูกต้อง' }
         ],
         parameters: [
           // 1. DGA (8 items)
@@ -725,15 +920,21 @@
           { label: 'ระดับตัดวงจร (SF₆ Lockout Level)', val: '0.50 MPa @ 20°C' },
           { label: 'วิศวกรผู้รับผิดชอบ', val: 'สุวนันทน์ (วิศวกร)' }
         ],
-        checklist: [
-          { title: 'ตรวจสอบแรงดันก๊าซ SF₆ ทุก Compartment (CB, DS, Busbar)', pass: true },
-          { title: 'สแกนตรวจหารอยรั่วก๊าซ SF₆ ด้วยกล้อง Optical Gas Imaging หรือ Sniffer', pass: true },
-          { title: 'ตรวจวัดสัญญาณ Partial Discharge แบบออนไลน์ (UHF PD Monitor)', pass: true },
-          { title: 'ตรวจสอบตัวนับรอบการตัดตอนของ Circuit Breaker (Operation Counter)', pass: true },
-          { title: 'ตรวจสอบกระแสมอเตอร์ชาร์จสปริงและเวลาชาร์จสปริง CB', pass: true },
-          { title: 'ตรวจสอบการทำงานของ Space Heater ในตู้ Local Control Cabinet (LCC)', pass: true },
-          { title: 'ตรวจสอบระบบ Interlock กลไกระหว่าง Disconnector และ Earthing Switch', pass: true },
-          { title: 'ตรวจเช็กแรงดันไฟเลี้ยงกระแสตรง DC Control Supply (125 VDC)', pass: true }
+        checklistPattern: [
+          { num: '2.1', name: 'Circuit Breaker Compartment SF6 Pressure', status: 'normal', detail: '0.585 MPa (เกณฑ์ > 0.55 MPa)' },
+          { num: '2.2', name: 'Disconnector / Busbar SF6 Pressure', status: 'normal', detail: '0.442 MPa / 0.445 MPa ปกติ' },
+          { num: '2.3', name: 'การตรวจจับสัญญาณ Partial Discharge (UHF)', status: 'normal', detail: '3.8 pC ปลอดภัย ไม่พบสัญญาณต่อเนื่อง' },
+          { num: '2.4', name: 'Circuit Breaker Counter & สถิติตัดตอน', status: 'normal', detail: '184 Ops กลไกทำงานราบรื่น' },
+          { num: '2.5', name: 'เวลากลไกชาร์จสปริง CB (Spring Charging)', status: 'normal', detail: '8.4 วินาที (เกณฑ์ < 12.0 s)' },
+          { num: '2.6', name: 'ความต้านทานหน้าสัมผัสหลัก (Contact Resistance)', status: 'normal', detail: '32.8 μΩ (เกณฑ์ < 45.0 μΩ)' },
+          { num: '2.7', name: 'Disconnector (DS) Motor Driving Current', status: 'normal', detail: '2.4 A ทำงานปกติ ไม่ติดขัด' },
+          { num: '2.8', name: 'Fast Earthing Switch (FES) Closing Time', status: 'normal', detail: '88 ms สปริงยิงลงดินฉับพลัน' },
+          { num: '2.9', name: 'LCC Panel Space Heater & Thermostat', status: 'normal', detail: 'ฮีตเตอร์ทำงานปกติ กระแส 1.85 A' },
+          { num: '2.10', name: 'DC Control Supply Voltage (125 VDC)', status: 'normal', detail: '124.5 VDC แรงดันไฟเลี้ยงคงที่' },
+          { num: '2.11', name: 'Mechanical Interlock DS & ES', status: 'normal', detail: 'ระบบอินเตอร์ล็อกป้องกันการสับซ้อนสมบูรณ์' },
+          { num: '2.12', name: 'SF6 Gas Sniffer / Leakage Check', status: 'normal', detail: 'ไม่พบจุดรั่วซึมตามรอยต่อหน้าแปลน' },
+          { num: '2.13', name: 'Surge Arrester & Enclosure Grounding', status: 'normal', detail: 'จุดต่อลงดินเปลือกหุ้มแน่นหนา' },
+          { num: '2.14', name: 'Trip Circuit Supervision (TCS Relay)', status: 'normal', detail: 'วงจร Trip 1 & 2 พร้อมทำงาน' }
         ],
         parameters: [
           // 1. SF6 Gas State (7 items)
@@ -837,18 +1038,15 @@
       let avail = parseFloat(document.getElementById('input-direct-avail').value) || 96.0;
 
       if (source === 'mtbf' || source === 'mttr') {
-        // Calculate Availability = MTBF / (MTBF + MTTR) * 100
         avail = (mtbf / (mtbf + mttr)) * 100;
         document.getElementById('input-direct-avail').value = avail.toFixed(3);
       } else if (source === 'avail') {
-        // Availability typed -> calculate MTBF from MTTR: MTBF = MTTR * (A / (100 - A))
         if (avail >= 100) avail = 99.999;
         if (avail <= 0) avail = 1.0;
         mtbf = mttr * (avail / (100 - avail));
         document.getElementById('input-direct-mtbf').value = mtbf.toFixed(1);
       }
 
-      // Sync back to operational hours & repair time
       asset.opHours = Math.round(mtbf);
       asset.failures = 1;
       asset.repairTime = parseFloat(mttr.toFixed(2));
@@ -882,7 +1080,6 @@
       const asset = appData[currentAssetKey];
       const lambda = mtbf > 0 ? (1 / mtbf) : 0;
 
-      // Update KPI Cards
       document.getElementById('kpi-avail').textContent = avail.toFixed(3) + ' %';
       document.getElementById('kpi-mtbf').textContent = mtbf.toLocaleString(undefined, { maximumFractionDigits: 0 }) + ' ชม.';
       document.getElementById('kpi-lambda').textContent = `λ = ${lambda.toFixed(6)}`;
@@ -890,7 +1087,11 @@
       document.getElementById('kpi-failures-count').textContent = `ขัดข้อง ${asset.failures} ครั้ง`;
       document.getElementById('kpi-downtime-total').textContent = `เวลารวมหยุดซ่อม: ${asset.repairTime.toFixed(1)} ชม.`;
 
-      // Check against ≥ 96% threshold
+      // Update in Field Checklist Section 3
+      document.getElementById('chk-ram-avail').textContent = `${avail.toFixed(3)}% (${avail >= 96.0 ? 'ผ่านเกณฑ์ ≥ 96%' : '⚠️ ต่ำกว่า 96%'})`;
+      document.getElementById('chk-ram-mtbf').textContent = `${mtbf.toLocaleString(undefined, { maximumFractionDigits: 0 })} ชม.`;
+      document.getElementById('chk-ram-mttr').textContent = `${mttr.toFixed(1)} ชม.`;
+
       const badgeTarget = document.getElementById('kpi-avail-target-badge');
       const feedbackMsg = document.getElementById('avail-feedback-msg');
 
@@ -911,7 +1112,6 @@
       renderTrendChart(avail);
     }
 
-    // Dynamic Health Index calculation based on parameters
     function calculateHealthIndex() {
       const asset = appData[currentAssetKey];
       let totalPenalty = 0;
@@ -948,21 +1148,18 @@
       const asset = appData[currentAssetKey];
       populateCategoryFilter();
 
-      // Top Banner
       document.getElementById('asset-badge-type').textContent = asset.type;
       document.getElementById('asset-badge-type').className = `px-2.5 py-0.5 rounded-full text-xs font-bold text-white ${asset.badgeColor}`;
       document.getElementById('asset-title').textContent = asset.name;
       document.getElementById('asset-desc').textContent = asset.desc;
       document.getElementById('table-section-title').textContent = `รายการพารามิเตอร์ผลตรวจวัดเชิงลึก (${asset.parameters.length} พารามิเตอร์)`;
       document.getElementById('param-count-badge').textContent = `${asset.parameters.length} พารามิเตอร์`;
-      document.getElementById('inspect-asset-display').value = `${asset.name}`;
+      document.getElementById('chk-asset-id').value = `${asset.name}`;
 
-      // Calculate Direct RAM
       const mtbf = asset.failures > 0 ? (asset.opHours / asset.failures) : asset.opHours;
       const mttr = asset.failures > 0 ? (asset.repairTime / asset.failures) : 5.0;
       const avail = (asset.opHours / (asset.opHours + asset.repairTime)) * 100;
 
-      // Populate Inputs
       document.getElementById('input-direct-mtbf').value = mtbf.toFixed(1);
       document.getElementById('input-direct-mttr').value = mttr.toFixed(1);
       document.getElementById('input-direct-avail').value = avail.toFixed(3);
@@ -972,9 +1169,10 @@
       document.getElementById('input-ram-repair').value = asset.repairTime;
       document.getElementById('input-ram-pm').value = asset.plannedPM;
 
-      // Update Health Index
       const hi = calculateHealthIndex();
       document.getElementById('kpi-hi').textContent = hi.toFixed(1) + ' %';
+      document.getElementById('chk-ram-hi').textContent = `${hi.toFixed(1)}% (${hi >= 85 ? 'สภาพดีมาก' : hi >= 70 ? 'เฝ้าระวัง' : 'วิกฤต'})`;
+
       const hiStatusElem = document.getElementById('kpi-hi-status');
       if (hi >= 85) {
         hiStatusElem.textContent = 'สภาพดีมาก (Good)';
@@ -990,12 +1188,9 @@
       updateRAMDashboardDisplays(mtbf, mttr, avail);
       renderCategorySummary();
       filterParameters();
-      renderChecklistModal();
+      renderChecklistPatternTable();
     }
 
-    // -------------------------------------------------------------
-    // RENDER PARAMETER TABLE WITH LIVE INPUTS
-    // -------------------------------------------------------------
     function filterParameters() {
       const asset = appData[currentAssetKey];
       const searchTerm = document.getElementById('search-param').value.toLowerCase().trim();
@@ -1134,38 +1329,46 @@
     }
 
     // -------------------------------------------------------------
-    // FIELD MAINTENANCE CHECKLIST ENGINE
+    // RENDER SECTION 2: CHECKLIST ROWS (MATCHING THE OFFICIAL PDF PATTERN)
     // -------------------------------------------------------------
-    function renderChecklistModal() {
+    function renderChecklistPatternTable() {
       const asset = appData[currentAssetKey];
-      const container = document.getElementById('checklist-items');
+      const container = document.getElementById('pattern-checklist-rows');
       container.innerHTML = '';
 
-      asset.checklist.forEach((item, index) => {
-        const div = document.createElement('div');
-        div.className = 'flex items-center justify-between p-2.5 rounded-xl border border-rose-100 bg-rose-50/30 hover:bg-rose-50/70 transition';
-        div.innerHTML = `
-          <div class="flex items-center gap-2.5">
-            <input type="checkbox" id="chk-${index}" ${item.pass ? 'checked' : ''} onchange="toggleChecklistItem(${index})" class="w-4 h-4 rounded text-rose-500 accent-rose-500 cursor-pointer">
-            <label for="chk-${index}" class="text-xs font-medium text-slate-700 cursor-pointer">${index + 1}. ${item.title}</label>
-          </div>
-          <span class="text-[10px] font-bold ${item.pass ? 'text-emerald-600 bg-emerald-50 border-emerald-200' : 'text-amber-600 bg-amber-50 border-amber-200'} px-2 py-0.5 rounded border">
-            ${item.pass ? 'ผ่าน (Pass)' : 'ต้องตรวจสอบเพิ่ม'}
-          </span>
+      asset.checklistPattern.forEach((item, idx) => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-rose-50/30';
+        tr.innerHTML = `
+          <td class="p-2 text-center text-slate-400 font-mono">${item.num}</td>
+          <td class="p-2 font-medium text-slate-800">${item.name}</td>
+          <td class="p-2 text-center">
+            <input type="radio" name="chk-item-${idx}" value="normal" ${item.status === 'normal' ? 'checked' : ''} onchange="setChecklistStatus(${idx}, 'normal')" class="accent-rose-500 w-3.5 h-3.5 cursor-pointer">
+          </td>
+          <td class="p-2 text-center">
+            <input type="radio" name="chk-item-${idx}" value="defect" ${item.status === 'defect' ? 'checked' : ''} onchange="setChecklistStatus(${idx}, 'defect')" class="accent-amber-500 w-3.5 h-3.5 cursor-pointer">
+          </td>
+          <td class="p-2 text-center">
+            <input type="radio" name="chk-item-${idx}" value="none" ${item.status === 'none' ? 'checked' : ''} onchange="setChecklistStatus(${idx}, 'none')" class="accent-slate-400 w-3.5 h-3.5 cursor-pointer">
+          </td>
+          <td class="p-2">
+            <input type="text" value="${item.detail}" oninput="updateChecklistDetail(${idx}, this.value)" class="w-full bg-transparent border-b border-rose-100 hover:border-rose-300 focus:border-rose-500 text-[11px] text-slate-700 px-1 py-0.5 focus:outline-none">
+          </td>
         `;
-        container.appendChild(div);
+        container.appendChild(tr);
       });
     }
 
-    function toggleChecklistItem(index) {
-      const asset = appData[currentAssetKey];
-      asset.checklist[index].pass = !asset.checklist[index].pass;
-      renderChecklistModal();
+    function setChecklistStatus(idx, status) {
+      appData[currentAssetKey].checklistPattern[idx].status = status;
     }
 
-    function saveChecklist() {
-      const inspector = document.getElementById('inspector-name').value;
-      alert(`บันทึกผลการตรวจสอบอุปกรณ์โดย: ${inspector} เรียบร้อยแล้ว`);
+    function updateChecklistDetail(idx, text) {
+      appData[currentAssetKey].checklistPattern[idx].detail = text;
+    }
+
+    function saveFieldInspection() {
+      alert('บันทึกผลการตรวจสอบบำรุงรักษาหน้างานโดย "สุวนันทน์ (วิศวกร)" เรียบร้อยแล้ว');
       closeModal('modal-checklist');
     }
 
@@ -1217,7 +1420,7 @@
           },
           scales: {
             y: {
-              min: 94.0, // Scale shows from 94% to highlight 96% threshold
+              min: 94.0,
               max: 100.0,
               grid: { color: '#fce7eb' },
               ticks: { 
@@ -1315,7 +1518,7 @@
         asset.repairTime = 6.5;
       } else if (type === 'critical_pd') {
         asset.failures = 3;
-        asset.repairTime = 420.0; // Brings Availability below 96%
+        asset.repairTime = 420.0;
       }
 
       closeModal('modal-preset');

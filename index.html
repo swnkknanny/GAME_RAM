@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>RAM Insight — Substation Engineer</title>
+<meta name="description" content="เกมจำลองงานวิศวกรดูแลหม้อแปลงไฟฟ้า สถานีคอต่อ (KO) และแพรกษา (PR) — Reliability / Availability / Maintainability">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;background:#06121f;font-family:'Noto Sans Thai',system-ui,sans-serif;color:#e6f1fb;touch-action:none;user-select:none;-webkit-user-select:none}
+#c{position:fixed;inset:0;width:100%;height:100%;display:block}
+.hidden{display:none!important}
+.panel{background:rgba(4,44,83,.88);border:1px solid rgba(133,183,235,.25);border-radius:10px}
+button{font-family:inherit;cursor:pointer;border:1px solid rgba(133,183,235,.45);background:#185fa5;color:#e6f1fb;border-radius:8px;padding:8px 14px;font-size:14px}
+button:hover{background:#2470bb}
+button.gold{background:#fac775;color:#633806;border-color:#fac775;font-weight:700}
+button.gold:hover{background:#ffd78f}
+button.ghost{background:transparent}
+button.on{background:#fac775;color:#633806;border-color:#fac775}
+input,select{font-family:inherit;font-size:14px;padding:7px 9px;border-radius:7px;border:1px solid rgba(133,183,235,.45);background:#0c2a4a;color:#e6f1fb}
+/* select screen */
+#select{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:22px 14px;pointer-events:none}
+#select>*{pointer-events:auto}
+#select h1{font-size:26px;font-weight:700;text-align:center}
+#select .sub{color:#85b7eb;font-size:13px;text-align:center;margin-top:4px}
+#selBottom{display:flex;flex-direction:column;align-items:center;gap:12px;width:100%;max-width:520px}
+#selCards{display:flex;gap:12px;width:100%}
+#selCards button{flex:1;padding:12px;font-size:15px}
+#selName{width:100%;text-align:center}
+/* HUD */
+#hud{position:fixed;inset:0;pointer-events:none}
+#hud .panel{position:absolute;padding:8px 12px;pointer-events:auto}
+#tl{top:10px;left:10px;min-width:200px}
+#tl .big{font-size:16px;font-weight:700}
+#tl .small,#tr .small{font-size:12px;color:#85b7eb}
+#tr{top:10px;right:10px;text-align:right;min-width:200px}
+#speed{top:78px;left:10px;display:flex;gap:4px;padding:5px!important}
+#speed button{padding:4px 9px;font-size:12px}
+#alert{top:10px;left:50%;transform:translateX(-50%);background:#a32d2d!important;border-color:#e24b4a!important;max-width:44vw;text-align:center;font-size:13px;font-weight:500}
+#avail{left:10px;bottom:10px;width:230px;font-size:12px}
+#avail .row{display:flex;align-items:center;gap:6px;margin-top:4px}
+#avail .bar{flex:1;height:8px;border-radius:4px;background:#185fa5;overflow:hidden}
+#avail .bar i{display:block;height:100%;border-radius:4px}
+#prompt{position:absolute;left:50%;top:62%;transform:translateX(-50%);padding:8px 14px;font-size:14px}
+#prompt b{display:inline-block;background:#fac775;color:#633806;border-radius:5px;padding:0 7px;margin-right:6px}
+#cross{position:absolute;left:50%;top:50%;width:6px;height:6px;margin:-3px;border-radius:50%;background:#fff;box-shadow:0 0 0 1.5px #000}
+#keys{right:10px;bottom:10px;font-size:12px;color:#b5d4f4;line-height:1.7}
+#keys b{color:#fac775}
+#toasts{position:absolute;top:120px;right:10px;display:flex;flex-direction:column;gap:6px;align-items:flex-end}
+.toast{background:rgba(4,44,83,.92);border-left:4px solid #fac775;padding:7px 12px;border-radius:6px;font-size:13px;max-width:320px;animation:fade 5s forwards}
+.toast.bad{border-color:#e24b4a}.toast.good{border-color:#97c459}
+@keyframes fade{0%{opacity:0;transform:translateX(20px)}8%{opacity:1;transform:none}85%{opacity:1}100%{opacity:0}}
+/* mobile controls */
+#joy{position:absolute;left:24px;bottom:150px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.12);border:2px solid rgba(255,255,255,.3);pointer-events:auto}
+#knob{position:absolute;left:35px;top:35px;width:50px;height:50px;border-radius:50%;background:rgba(250,199,117,.85)}
+#mbtns{position:absolute;right:14px;bottom:20px;display:grid;grid-template-columns:repeat(2,70px);gap:8px;pointer-events:auto}
+#mbtns button{height:56px;padding:4px;font-size:13px;border-radius:12px;background:rgba(24,95,165,.9)}
+#mbtns button.gold{background:#fac775}
+/* modal */
+#modal{position:fixed;inset:0;background:rgba(2,12,24,.55);display:flex;align-items:center;justify-content:center;padding:12px;z-index:10}
+#modal .box{width:min(820px,100%);max-height:92vh;overflow:auto;padding:18px 20px;touch-action:pan-y;user-select:text;-webkit-user-select:text}
+#modal h2{font-size:20px;margin-bottom:6px}
+#modal h3{font-size:15px;margin:14px 0 6px;color:#fac775}
+#modal p,#modal li{font-size:14px;line-height:1.7}
+#modal ul{padding-left:20px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 12px}
+.tabs button{padding:6px 11px;font-size:13px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:6px 7px;border-bottom:1px solid rgba(133,183,235,.18);text-align:left;white-space:nowrap}
+th{color:#85b7eb;font-weight:500}
+.tw{overflow-x:auto}
+.ok{color:#97c459}.bad{color:#f09595}.warn{color:#fac775}.mut{color:#85b7eb}
+.card{background:rgba(12,68,124,.55);border:1px solid rgba(133,183,235,.2);border-radius:10px;padding:12px;margin-bottom:10px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px 14px}
+.grid2 label{font-size:12px;color:#85b7eb;display:block;margin-bottom:3px}
+.grid2 input,.grid2 select{width:100%}
+.opt{display:flex;gap:8px;align-items:flex-start;padding:7px 9px;border:1px solid rgba(133,183,235,.25);border-radius:8px;margin-bottom:6px;cursor:pointer;font-size:14px}
+.opt input{margin-top:5px}
+.err{color:#f09595;font-size:13px;margin-top:6px;min-height:18px}
+.btnrow{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:12px}
+.prog{height:8px;background:#0c2a4a;border-radius:4px;overflow:hidden;margin-top:6px}.prog i{display:block;height:100%;background:#fac775}
+.read{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:8px 0}
+.read div{background:#0c2a4a;border-radius:8px;padding:8px;text-align:center;font-size:12px;color:#85b7eb}
+.read b{display:block;font-size:16px;color:#e6f1fb}
+.grade{font-size:56px;font-weight:700;color:#fac775;line-height:1}
+@media (max-width:700px){
+ #tl,#tr{min-width:0;padding:6px 9px}#tl .big{font-size:14px}
+ #alert{top:auto;bottom:250px;max-width:80vw}
+ #avail{top:120px;bottom:auto;left:10px;width:170px;font-size:11px}
+ #speed{top:auto;bottom:10px;left:50%;transform:translateX(-50%)}
+ #keys{display:none}
+ .read{grid-template-columns:repeat(2,1fr)}
+ .grid2{grid-template-columns:1fr}
+ #toasts{top:auto;bottom:300px}
+}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<div id="select">
+  <div>
+    <h1>RAM Insight · Substation Engineer</h1>
+    <div class="sub">เกมจำลองงานวิศวกรดูแลหม้อแปลงไฟฟ้า · สถานีคอต่อ (KO) · สถานีแพรกษา (PR) · นิคมอุตสาหกรรมบางปู</div>
+  </div>
+  <div id="selBottom">
+    <div id="selCards">
+      <button id="pickF" class="on">วิศวกรหญิง</button>
+      <button id="pickM">วิศวกรชาย</button>
+    </div>
+    <input id="selName" maxlength="24" placeholder="ชื่อวิศวกร">
+    <button id="startBtn" class="gold" style="width:100%;padding:12px;font-size:16px">เริ่มกะงาน</button>
+  </div>
+</div>
+
+<div id="hud" class="hidden">
+  <div id="cross"></div>
+  <div id="tl" class="panel"><div class="big" id="hDate">วันที่ 1 08:00</div><div class="small" id="hSta">สถานีคอต่อ (KO)</div></div>
+  <div id="speed" class="panel">
+    <button data-s="0">หยุด</button><button data-s="1" class="on">1×</button><button data-s="2">2×</button><button data-s="4">4×</button>
+  </div>
+  <div id="tr" class="panel"><div class="big" id="hBud">฿ 0</div><div class="small" id="hTeam">-</div></div>
+  <div id="alert" class="panel hidden"></div>
+  <div id="avail" class="panel"></div>
+  <div id="prompt" class="panel hidden"></div>
+  <div id="keys" class="panel"><b>WASD</b> เดิน · <b>Shift</b> วิ่ง · <b>เมาส์</b> หันมอง<br><b>E</b> ตรวจหม้อแปลง · <b>Tab</b> แท็บเล็ต<br><b>V</b> สลับมุมมอง · <b>M</b> ย้ายสถานี · <b>P</b> หยุดเวลา</div>
+  <div id="toasts"></div>
+  <div id="joy" class="hidden"><div id="knob"></div></div>
+  <div id="mbtns" class="hidden">
+    <button id="bE" class="gold">ตรวจ</button><button id="bTab">แท็บเล็ต</button>
+    <button id="bV">มุมมอง</button><button id="bM">ย้ายสถานี</button>
+  </div>
+</div>
+
+<div id="modal" class="hidden"><div class="box panel" id="mbox"></div></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+const isTouch=('ontouchstart' in window)||navigator.maxTouchPoints>0;
+const rand=(a,b)=>a+Math.random()*(b-a);
+const expRand=m=>-Math.log(1-Math.random())*m;
+const pad2=n=>String(n).padStart(2,'0');
+function splitT(h){const d=Math.floor(h/24)+1;const r=h-(d-1)*24;let hh=Math.floor(r);let mm=Math.round((r-hh)*60);if(mm===60){mm=0;hh++;}return {d,hh,mm};}
+function fmtT(h){const t=splitT(Math.min(h,YEAR-1/60));return `วันที่ ${t.d} ${pad2(t.hh)}:${pad2(t.mm)}`;}
+const baht=n=>(n<0?'-':'')+'฿ '+Math.abs(Math.round(n)).toLocaleString('th-TH');
+const pct=v=>(v*100).toFixed(2)+'%';
+
+/* ================= GAME DATA ================= */
+const YEAR=8760, HOURS_PER_SEC=7.5, LEAD_TIME=120, A_TARGET=0.96, FORM_DEADLINE=168;
+const STA={KO:{x:-50,name:'สถานีไฟฟ้าย่อยคอต่อ',code:'KO'},PR:{x:50,name:'สถานีไฟฟ้าย่อยแพรกษา',code:'PR'}};
+const TF_DEFS=[
+ {id:'KO1',st:'KO',kv:'115/24 kV',mtbf:3000,lx:-15},
+ {id:'KO2',st:'KO',kv:'115/24 kV',mtbf:2600,lx:0},
+ {id:'KO3',st:'KO',kv:'115/24 kV',mtbf:3300,lx:15},
+ {id:'PR1',st:'PR',kv:'115/24 kV',mtbf:2900,lx:-15},
+ {id:'PR2',st:'PR',kv:'115/24 kV',mtbf:3200,lx:0},
+ {id:'PR3',st:'PR',kv:'67-115/24 kV',mtbf:2300,lx:15},
+];
+const PARTS={
+ oltc:{name:'ชุดมอเตอร์ขับ OLTC',price:180000},
+ gasket:{name:'ชุดปะเก็น + น้ำมันหม้อแปลง',price:95000},
+ buchholz:{name:'Buchholz relay + ชุดกรองน้ำมัน',price:140000},
+ fan:{name:'มอเตอร์พัดลมระบายความร้อน',price:45000},
+ bushing:{name:'บุชชิ่ง 115 kV',price:380000},
+ arrester:{name:'Surge arrester 115 kV',price:85000},
+};
+const FAULTS=[
+ {k:'oltc',name:'OLTC ขัดข้อง (ชุดขับมอเตอร์)',alarm:'Voltage regulation fail',part:'oltc',base:16,w:1.2,smoke:false,
+  sym:['แรงดันด้าน 24 kV ต่ำกว่าเกณฑ์','OLTC ค้างที่ Tap 9 ไม่เปลี่ยนตามคำสั่ง','มีกลิ่นไหม้ที่ตู้ขับ OLTC'],read:{oil:62,wti:78,v:'21.6 kV',b:'ปกติ'}},
+ {k:'leak',name:'น้ำมันรั่วที่ปะเก็น/วาล์ว',alarm:'Low oil level',part:'gasket',base:24,w:1.3,smoke:false,
+  sym:['มีคราบน้ำมันใต้ถังและบนแท่นฐาน','ระดับน้ำมันใน Conservator ต่ำ','ซิลิกาเจลเปลี่ยนสีเร็วผิดปกติ'],read:{oil:68,wti:82,v:'24.1 kV',b:'Alarm'}},
+ {k:'buch',name:'Buchholz relay ทำงาน (แก๊สสะสมในถัง)',alarm:'Main transformer trip',part:'buchholz',base:36,w:0.8,smoke:true,
+  sym:['พบแก๊สสะสมในช่องรีเลย์ Buchholz','ผล DGA เบื้องต้นมี C2H2 สูง','ไม่พบรอยไหม้ภายนอก'],read:{oil:74,wti:88,v:'0 kV (Trip)',b:'Trip'}},
+ {k:'fan',name:'พัดลมระบายความร้อนเสีย',alarm:'WTI high temperature',part:'fan',base:8,w:1.5,smoke:false,
+  sym:['WTI ขึ้นถึง 118°C เกินค่าตั้ง','พัดลมชุดระบายความร้อนไม่หมุน','เบรกเกอร์มอเตอร์พัดลมตัด'],read:{oil:96,wti:118,v:'24.0 kV',b:'ปกติ'}},
+ {k:'bush',name:'บุชชิ่งแรงสูงวาบไฟ/แตกร้าว',alarm:'Main transformer trip',part:'bushing',base:48,w:0.6,smoke:true,
+  sym:['พบรอยไหม้และรอยร้าวที่บุชชิ่ง HV เฟส B','รีเลย์ Differential (87T) ทำงาน','Buchholz ไม่ทำงาน'],read:{oil:70,wti:84,v:'0 kV (Trip)',b:'ปกติ'}},
+ {k:'arr',name:'Surge arrester เสียหายจากฟ้าผ่า',alarm:'Earth fault trip',part:'arrester',base:12,w:1.0,smoke:true,
+  sym:['เคาน์เตอร์ Surge arrester เพิ่มขึ้นหลังพายุฝน','ฉนวนอาร์เรสเตอร์ร้าว มีรอยดำ','รีเลย์ Earth fault ทำงาน'],read:{oil:60,wti:72,v:'0 kV (Trip)',b:'ปกติ'}},
+];
+const NORMAL_READ={oil:55,wti:68,v:'24.0 kV',b:'ปกติ'};
+
+/* ================= RENDERER / SCENES ================= */
+const canvas=$('c');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:!isTouch});
+renderer.setPixelRatio(Math.min(devicePixelRatio,isTouch?1.5:2));
+renderer.setSize(innerWidth,innerHeight);
+renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+
+const M=(color,o={})=>new THREE.MeshStandardMaterial(Object.assign({color,roughness:.8,metalness:.1},o));
+function box(w,h,d,mat,x,y,z,parent,shadow=true){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);m.position.set(x,y,z);if(shadow){m.castShadow=true;m.receiveShadow=true;}if(parent)parent.add(m);return m;}
+function cyl(rt,rb,h,mat,x,y,z,parent,seg=16){const m=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,seg),mat);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;if(parent)parent.add(m);return m;}
+function noiseTex(base,amt,rep,size=256){const c=document.createElement('canvas');c.width=c.height=size;const x=c.getContext('2d');x.fillStyle=base;x.fillRect(0,0,size,size);
+ for(let i=0;i<size*size/5;i++){const v=Math.random();x.fillStyle=v>.5?`rgba(255,255,255,${(v-.5)*amt})`:`rgba(0,0,0,${(.5-v)*amt})`;x.fillRect(Math.random()*size,Math.random()*size,2+Math.random()*2,2+Math.random()*2);}
+ const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(rep[0],rep[1]);return t;}
+function rr(x,X,Y,W,H,R){x.beginPath();x.moveTo(X+R,Y);x.lineTo(X+W-R,Y);x.quadraticCurveTo(X+W,Y,X+W,Y+R);x.lineTo(X+W,Y+H-R);x.quadraticCurveTo(X+W,Y+H,X+W-R,Y+H);x.lineTo(X+R,Y+H);x.quadraticCurveTo(X,Y+H,X,Y+H-R);x.lineTo(X,Y+R);x.quadraticCurveTo(X,Y,X+R,Y);x.closePath();}
+function makeLabel(w=512,h=160){const c=document.createElement('canvas');c.width=w;c.height=h;const t=new THREE.CanvasTexture(c);const s=new THREE.Sprite(new THREE.SpriteMaterial({map:t,transparent:true,depthWrite:false}));s.userData={c,t};return s;}
+function drawLabel(s,title,sub,col){const {c,t}=s.userData;const x=c.getContext('2d');x.clearRect(0,0,c.width,c.height);rr(x,8,8,c.width-16,c.height-16,24);x.fillStyle='rgba(4,44,83,0.85)';x.fill();x.lineWidth=6;x.strokeStyle=col;x.stroke();
+ x.textAlign='center';x.fillStyle='#ffffff';x.font='700 58px "Noto Sans Thai",sans-serif';x.fillText(title,c.width/2,74);x.fillStyle=col;x.font='500 38px "Noto Sans Thai",sans-serif';x.fillText(sub,c.width/2,130);t.needsUpdate=true;}
+function signPlane(w,h,draw,cw=1024,ch=512){const c=document.createElement('canvas');c.width=cw;c.height=ch;const x=c.getContext('2d');draw(x,cw,ch);const t=new THREE.CanvasTexture(c);const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshStandardMaterial({map:t,roughness:.6}));m.userData={c,draw,t};return m;}
+
+/* ---------- Character ---------- */
+function makeCharacter(g,opt={}){
+ const skin=opt.skin||(g==='f'?0xf0b49a:0xc98a64);
+ const grp=new THREE.Group();
+ const vestM=M(0xff8c1a),pantsM=M(0x26324a),shirtM=M(opt.shirt||0x2f5f9e),refl=M(0xf4f4ee,{emissive:0x444444}),shoeM=M(0x1e1e1e),skinM=M(skin),hairM=M(g==='f'?0x2a1a10:0x1c1410),helmM=M(opt.helm||(g==='f'?0xf6f6f2:0xf2c230),{roughness:.35});
+ const tw=g==='f'?0.42:0.48;
+ const mkLeg=x=>{const p=new THREE.Group();p.position.set(x,0.95,0);box(0.16,0.88,0.18,pantsM,0,-0.44,0,p);box(0.18,0.1,0.3,shoeM,0,-0.9,0.05,p);grp.add(p);return p;};
+ const legL=mkLeg(-0.12),legR=mkLeg(0.12);
+ box(tw-0.02,0.62,0.24,shirtM,0,1.26,0,grp);
+ box(tw,0.56,0.27,vestM,0,1.24,0,grp);
+ box(tw+0.01,0.05,0.28,refl,0,1.12,0,grp);box(tw+0.01,0.05,0.28,refl,0,1.32,0,grp);
+ const mkArm=x=>{const p=new THREE.Group();p.position.set(x,1.52,0);box(0.13,0.58,0.15,shirtM,0,-0.29,0,p);box(0.11,0.12,0.12,skinM,0,-0.64,0,p);grp.add(p);return p;};
+ const armL=mkArm(-(tw/2+0.08)),armR=mkArm(tw/2+0.08);
+ cyl(0.06,0.07,0.1,skinM,0,1.6,0,grp);
+ const head=new THREE.Mesh(new THREE.SphereGeometry(0.14,20,16),skinM);head.scale.set(1,1.12,1);head.position.set(0,1.73,0);head.castShadow=true;grp.add(head);
+ const eyeM=M(0x111111);[-0.05,0.05].forEach(x=>{const e=new THREE.Mesh(new THREE.SphereGeometry(0.018,8,8),eyeM);e.position.set(x,1.75,0.13);grp.add(e);});
+ const hairCap=new THREE.Mesh(new THREE.SphereGeometry(0.148,20,12,0,Math.PI*2,0,Math.PI/1.8),hairM);hairCap.position.set(0,1.75,-0.01);grp.add(hairCap);
+ if(g==='f'){box(0.26,0.26,0.08,hairM,0,1.62,-0.11,grp);const tail=box(0.09,0.28,0.09,hairM,0,1.55,-0.18,grp);tail.rotation.x=0.25;}
+ const helm=new THREE.Mesh(new THREE.SphereGeometry(0.17,20,12,0,Math.PI*2,0,Math.PI/2),helmM);helm.position.set(0,1.8,0);helm.castShadow=true;grp.add(helm);
+ cyl(0.2,0.2,0.02,helmM,0,1.8,0.02,grp,20);
+ grp.traverse(o=>{if(o.isMesh)o.castShadow=true;});
+ return {grp,legL,legR,armL,armR,skinM};
+}
+
+/* ---------- Select scene ---------- */
+const selScene=new THREE.Scene();selScene.background=new THREE.Color(0x0c2a4a);
+selScene.add(new THREE.HemisphereLight(0xffffff,0x334455,0.9));
+{const l=new THREE.DirectionalLight(0xffffff,0.9);l.position.set(2,4,5);selScene.add(l);}
+const selCam=new THREE.PerspectiveCamera(38,innerWidth/innerHeight,0.1,50);
+const selF=makeCharacter('f'),selMch=makeCharacter('m');
+selF.grp.position.x=-1.1;selMch.grp.position.x=1.1;selScene.add(selF.grp,selMch.grp);
+const pedM=M(0x185fa5),ringM=new THREE.MeshBasicMaterial({color:0xfac775});
+const rings={};
+[['f',-1.1],['m',1.1]].forEach(([k,x])=>{const p=cyl(0.7,0.75,0.12,pedM,x,-0.06,0,selScene,32);const r=new THREE.Mesh(new THREE.TorusGeometry(0.74,0.035,8,48),ringM);r.rotation.x=Math.PI/2;r.position.set(x,0.01,0);selScene.add(r);rings[k]=r;});
+function fitSelCam(){const a=innerWidth/innerHeight;const d=a<1?6.2/a*0.72:6.2;selCam.aspect=a;selCam.position.set(0,1.3,d);selCam.lookAt(0,0.95,0);selCam.updateProjectionMatrix();}
+fitSelCam();
+
+/* ---------- World ---------- */
+const scene=new THREE.Scene();
+const skyDay=new THREE.Color(0x9cc7ef),skyNight=new THREE.Color(0x0b1730),skyDusk=new THREE.Color(0xe7a46b);
+scene.background=skyDay.clone();scene.fog=new THREE.Fog(0x9cc7ef,90,260);
+const camera=new THREE.PerspectiveCamera(72,innerWidth/innerHeight,0.08,500);camera.rotation.order='YXZ';scene.add(camera);
+const hemi=new THREE.HemisphereLight(0xdfefff,0x6b6a60,0.6);scene.add(hemi);
+const sun=new THREE.DirectionalLight(0xffffff,1);sun.position.set(40,90,40);sun.castShadow=true;
+sun.shadow.mapSize.set(isTouch?1024:2048,isTouch?1024:2048);
+Object.assign(sun.shadow.camera,{left:-115,right:115,top:75,bottom:-75,near:1,far:260});sun.shadow.bias=-0.0005;
+scene.add(sun);scene.add(sun.target);
+
+const colliders=[];
+const addCol=(cx,cz,hw,hd)=>colliders.push({x1:cx-hw,x2:cx+hw,z1:cz-hd,z2:cz+hd});
+
+// ground
+{const g=new THREE.Mesh(new THREE.PlaneGeometry(500,500),new THREE.MeshStandardMaterial({map:noiseTex('#6f8f4a',0.35,[80,80]),roughness:1}));g.rotation.x=-Math.PI/2;g.receiveShadow=true;scene.add(g);}
+const gravelTex=noiseTex('#a9a69b',0.5,[16,12]);
+const roadM=new THREE.MeshStandardMaterial({map:noiseTex('#3d3d3b',0.25,[40,2]),roughness:.95});
+{const r=new THREE.Mesh(new THREE.PlaneGeometry(240,9),roadM);r.rotation.x=-Math.PI/2;r.position.set(0,0.02,31);r.receiveShadow=true;scene.add(r);
+ const dm=new THREE.MeshBasicMaterial({color:0xf1efe8});for(let x=-115;x<115;x+=6){const d=new THREE.Mesh(new THREE.PlaneGeometry(3,0.18),dm);d.rotation.x=-Math.PI/2;d.position.set(x,0.03,31);scene.add(d);}}
+
+const concM=M(0xbdbab0),steelM=M(0x9aa3ab,{metalness:.6,roughness:.4}),tankM=M(0x8a948c,{metalness:.35,roughness:.55}),porcM=M(0x7a5a46,{roughness:.35}),darkM=M(0x2c2c2a),copperM=M(0xb87333,{metalness:.7,roughness:.3});
+const lineMat=new THREE.LineBasicMaterial({color:0x2c2c2a});
+function wire(a,b,sag=0.6){const pts=[];for(let i=0;i<=12;i++){const t=i/12;const p=new THREE.Vector3().lerpVectors(a,b,t);p.y-=Math.sin(Math.PI*t)*sag;pts.push(p);}scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),lineMat));}
+function tree(x,z,s=1){const t=cyl(0.18*s,0.25*s,2.2*s,M(0x5a4030),x,1.1*s,z,scene,8);const c=new THREE.Mesh(new THREE.SphereGeometry(1.6*s,10,8),M(0x3f6e2c));c.position.set(x,3.2*s,z);c.castShadow=true;scene.add(c);}
+function lightPole(x,z){cyl(0.08,0.12,8,steelM,x,4,z,scene,8);box(1.2,0.1,0.1,steelM,x+0.5,8,z,scene);const l=new THREE.Mesh(new THREE.BoxGeometry(0.5,0.15,0.3),new THREE.MeshStandardMaterial({color:0xffffff,emissive:0xfff2c0,emissiveIntensity:0}));l.position.set(x+1,7.9,z);scene.add(l);lamps.push(l);}
+const lamps=[];
+function lattice(x,z,h,top){const legs=[[-1.5,-1.5],[1.5,-1.5],[1.5,1.5],[-1.5,1.5]];legs.forEach(([a,b])=>{const m=box(0.18,h,0.18,steelM,x+a*0.6,h/2,z+b*0.6,scene);m.rotation.z=a*0.04;m.rotation.x=-b*0.04;});
+ for(let y=3;y<h;y+=3){box(2,0.08,0.08,steelM,x,y,z-0.9,scene);box(2,0.08,0.08,steelM,x,y,z+0.9,scene);box(0.08,0.08,2,steelM,x-0.9,y,z,scene);box(0.08,0.08,2,steelM,x+0.9,y,z,scene);}
+ box(top,0.25,0.4,steelM,x,h,z,scene);}
+
+/* ---------- Transformer ---------- */
+const tfs=[];
+function makeTransformer(def){
+ const s=STA[def.st];const cx=s.x+def.lx,cz=-4;
+ const g=new THREE.Group();g.position.set(cx,0,cz);scene.add(g);
+ box(7.2,0.4,5.2,concM,0,0.2,0,g);
+ box(4.6,3.6,3,tankM,0,2.2,0,g);box(4.8,0.15,3.2,tankM,0,4.07,0,g);
+ for(let i=0;i<4;i++)box(4.62,0.08,0.08,tankM,0,0.8+i*0.95,1.52,g);
+ const fans=[];
+ [-1,1].forEach(sd=>{
+  for(let i=0;i<8;i++)box(1.1,3.0,0.06,tankM,sd*2.95,2.2,-1.2+i*0.34,g);
+  [3.6,0.8].forEach(y=>{const p=cyl(0.09,0.09,2.6,tankM,sd*2.95,y,0,g,8);p.rotation.x=Math.PI/2;});
+  [-0.7,0.7].forEach(z=>{const f=new THREE.Group();f.position.set(sd*3.6,0.75,z);g.add(f);cyl(0.32,0.32,0.08,darkM,0,0,0,f,16).rotation.z=Math.PI/2;
+   for(let b=0;b<3;b++){const bl=box(0.03,0.5,0.12,steelM,sd*0.06,0,0,f);bl.rotation.x=b*Math.PI*2/3;bl.geometry.translate(0,0.2,0);}fans.push(f);});
+ });
+ const con=cyl(0.45,0.45,3,tankM,0,5.15,-1.15,g,20);con.rotation.z=Math.PI/2;
+ box(0.12,0.9,0.12,tankM,-1.1,4.6,-1.15,g);box(0.12,0.9,0.12,tankM,1.1,4.6,-1.15,g);
+ const bushTops=[];
+ [-1.2,0,1.2].forEach(x=>{cyl(0.12,0.14,2.2,porcM,x,5.25,-0.4,g,10);for(let k=0;k<8;k++)cyl(0.27,0.27,0.05,porcM,x,4.35+k*0.25,-0.4,g,14);cyl(0.06,0.06,0.3,copperM,x,6.5,-0.4,g,8);bushTops.push(new THREE.Vector3(cx+x,6.65,cz-0.4));
+  cyl(0.1,0.1,1.4,M(0x5e5e5a),x+0.5,4.85,-1.0,g,8);});
+ [-0.9,0,0.9].forEach(x=>{cyl(0.1,0.12,0.9,porcM,x,4.6,0.9,g,10);for(let k=0;k<3;k++)cyl(0.19,0.19,0.05,porcM,x,4.3+k*0.24,0.9,g,12);});
+ box(1.2,2.2,0.8,M(0x7c867f,{metalness:.3}),-1.4,2.1,1.9,g);
+ box(0.9,1.4,0.5,M(0x9aa09b),1.6,1.7,1.75,g);
+ const np=signPlane(0.9,0.45,(x,w,h)=>{x.fillStyle='#d9d4c4';x.fillRect(0,0,w,h);x.fillStyle='#222';x.font='bold 120px "Noto Sans Thai",sans-serif';x.textAlign='center';x.fillText(def.id,w/2,180);x.font='80px "Noto Sans Thai",sans-serif';x.fillText(def.kv,w/2,340);},512,384);
+ np.position.set(0.2,2.6,1.52);g.add(np);
+ box(0.1,1.6,0.1,steelM,0,0.8,3.3,g);
+ const lampM=new THREE.MeshStandardMaterial({color:0x2a8a3a,emissive:0x39d353,emissiveIntensity:1});
+ const lamp=new THREE.Mesh(new THREE.SphereGeometry(0.22,16,12),lampM);lamp.position.set(0,1.75,3.3);g.add(lamp);
+ const puddle=new THREE.Mesh(new THREE.CircleGeometry(1.6,24),new THREE.MeshStandardMaterial({color:0x2a1a08,roughness:.1,metalness:.3,transparent:true,opacity:.85}));puddle.rotation.x=-Math.PI/2;puddle.position.set(1.2,0.42,1.4);puddle.visible=false;g.add(puddle);
+ const label=makeLabel();label.scale.set(4.2,1.3,1);label.position.set(0,8.6,0);g.add(label);
+ addCol(cx,cz,3.75,2.75);
+ const tf=Object.assign({},def,{cx,cz,g,lamp,lampM,puddle,label,fans,bushTops,status:'ok',fault:null,failAt:0,repairStart:0,repairEnd:0,nextFail:0,
+  fails:0,repairs:0,downDone:0,wrongDiag:false,team:null,smokeT:0,diagnosedName:null});
+ tfs.push(tf);return tf;
+}
+
+/* ---------- Stations ---------- */
+function makeStation(code){
+ const s=STA[code],X=s.x;
+ const pad=new THREE.Mesh(new THREE.PlaneGeometry(60,44),new THREE.MeshStandardMaterial({map:gravelTex,roughness:1}));pad.rotation.x=-Math.PI/2;pad.position.set(X,0.01,0);pad.receiveShadow=true;scene.add(pad);
+ const drive=new THREE.Mesh(new THREE.PlaneGeometry(10,6),roadM);drive.rotation.x=-Math.PI/2;drive.position.set(X,0.025,24.5);scene.add(drive);
+ // fence
+ const fenceM=new THREE.MeshStandardMaterial({color:0x8d949a,transparent:true,opacity:.35,side:THREE.DoubleSide,metalness:.5});
+ const seg=(x1,z1,x2,z2)=>{const len=Math.hypot(x2-x1,z2-z1);const m=new THREE.Mesh(new THREE.PlaneGeometry(len,2.4),fenceM);m.position.set((x1+x2)/2,1.2,(z1+z2)/2);m.rotation.y=-Math.atan2(z2-z1,x2-x1);scene.add(m);
+  const n=Math.ceil(len/4);for(let i=0;i<=n;i++){const t=i/n;cyl(0.05,0.05,2.6,steelM,x1+(x2-x1)*t,1.3,z1+(z2-z1)*t,scene,6);}
+  box(len,0.06,0.06,steelM,(x1+x2)/2,2.45,(z1+z2)/2,scene).rotation.y=-Math.atan2(z2-z1,x2-x1);
+  if(x1===x2)addCol(x1,(z1+z2)/2,0.15,Math.abs(z2-z1)/2);else addCol((x1+x2)/2,z1,Math.abs(x2-x1)/2,0.15);};
+ seg(X-30,-22,X+30,-22);seg(X-30,-22,X-30,22);seg(X+30,-22,X+30,22);seg(X-30,22,X-5,22);seg(X+5,22,X+30,22);
+ // signs
+ const sg=signPlane(7,1.8,(x,w,h)=>{x.fillStyle='#0c447c';x.fillRect(0,0,w,h);x.fillStyle='#fac775';x.fillRect(0,h-40,w,40);x.fillStyle='#fff';x.textAlign='center';x.font='bold 96px "Noto Sans Thai",sans-serif';x.fillText(s.name,w/2,200);x.font='64px "Noto Sans Thai",sans-serif';x.fillText(`(${code}) · 115/24 kV`,w/2,330);},1600,420);
+ sg.position.set(X-9.5,3.4,22.4);scene.add(sg);cyl(0.1,0.1,2.6,steelM,X-12.5,1.3,22.4,scene,8);cyl(0.1,0.1,2.6,steelM,X-6.5,1.3,22.4,scene,8);
+ const dg=signPlane(1.6,1.1,(x,w,h)=>{x.fillStyle='#fff';x.fillRect(0,0,w,h);x.fillStyle='#c62828';x.fillRect(0,0,w,150);x.fillStyle='#fff';x.textAlign='center';x.font='bold 110px "Noto Sans Thai",sans-serif';x.fillText('อันตราย',w/2,118);x.fillStyle='#111';x.font='bold 84px "Noto Sans Thai",sans-serif';x.fillText('ไฟฟ้าแรงสูง',w/2,280);x.font='60px "Noto Sans Thai",sans-serif';x.fillText('ห้ามเข้าใกล้',w/2,390);},512,420);
+ dg.position.set(X+8,1.5,22.2);scene.add(dg);
+ // control building
+ const bx=X+18,bz=13;
+ box(12,4.5,7,M(0xe8e1cf),bx,2.25,bz,scene);box(12.6,0.35,7.6,M(0x8c3b2a),bx,4.65,bz,scene);
+ box(1.4,2.3,0.1,M(0x5a4636),bx-3,1.15,bz+3.52,scene);
+ const winM=M(0x274b6d,{metalness:.5,roughness:.2});[-0.5,1.8,4].forEach(x=>box(1.6,1.1,0.08,winM,bx+x,2.6,bz+3.52,scene));
+ const bs=signPlane(4,0.6,(x,w,h)=>{x.fillStyle='#0c447c';x.fillRect(0,0,w,h);x.fillStyle='#fff';x.textAlign='center';x.font='bold 70px "Noto Sans Thai",sans-serif';x.fillText('อาคารควบคุม · Control Room',w/2,90);},1024,140);
+ bs.position.set(bx+1.5,3.85,bz+3.56);scene.add(bs);
+ addCol(bx,bz,6,3.5);
+ // gantry
+ const gz=-14;[-24,-8,8,24].forEach(x=>{lattice(X+x,gz,12,0);addCol(X+x,gz,0.7,0.7);});
+ box(50,0.5,0.5,steelM,X,11.8,gz-0.9,scene);box(50,0.5,0.5,steelM,X,11.8,gz+0.9,scene);
+ // outside tower + lines
+ lattice(X,-48,22,18);
+ tree(X-38,-30,1.2);tree(X+38,-32,1.1);tree(X-40,10,1);tree(X+40,6,1.3);tree(X-36,40,0.9);tree(X+36,42,1);
+ lightPole(X-28,20);lightPole(X+27,-20);lightPole(X-28,-20);
+ TF_DEFS.filter(d=>d.st===code).forEach(d=>{const tf=makeTransformer(d);
+  tf.bushTops.forEach((p,i)=>{const top=new THREE.Vector3(p.x,11.55,gz+0.9);wire(top,p,0.4);wire(new THREE.Vector3(X-8+i*8,21.8,-48),new THREE.Vector3(X-8+i*8,11.8,gz-0.9),1.2);});});
+}
+makeStation('KO');makeStation('PR');
+for(let x=-110;x<=110;x+=22){tree(x,58,rand(.9,1.3));tree(x+11,-75,rand(.9,1.3));}
+
+/* ---------- Smoke ---------- */
+const smokeTex=(()=>{const c=document.createElement('canvas');c.width=c.height=64;const x=c.getContext('2d');const gr=x.createRadialGradient(32,32,2,32,32,30);gr.addColorStop(0,'rgba(90,90,90,.9)');gr.addColorStop(1,'rgba(90,90,90,0)');x.fillStyle=gr;x.fillRect(0,0,64,64);return new THREE.CanvasTexture(c);})();
+const puffs=[];
+function spawnPuff(tf){const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:smokeTex,transparent:true,depthWrite:false,opacity:.8}));sp.position.set(tf.cx+rand(-1,1),5.5,tf.cz-0.4+rand(-0.5,0.5));sp.scale.set(1,1,1);scene.add(sp);puffs.push({sp,life:0});}
+
+/* ---------- Trucks / crews ---------- */
+function makeTruck(){const g=new THREE.Group();
+ box(2.2,0.5,5.6,darkM,0,0.65,0,g);box(2.2,1.7,1.8,M(0xf4f4f0),0,1.75,1.85,g);box(2.0,0.7,0.06,M(0x274b6d,{metalness:.5,roughness:.2}),0,2.1,2.77,g);
+ box(2.2,1.2,3.4,M(0xf4f4f0),0,1.5,-0.8,g);box(2.22,0.25,3.42,M(0xff8c1a),0,1.2,-0.8,g);
+ [[-1.05,1.8],[1.05,1.8],[-1.05,-1.6],[1.05,-1.6]].forEach(([x,z])=>{cyl(0.42,0.42,0.3,darkM,x,0.42,z,g,16).rotation.z=Math.PI/2;});
+ const bm=new THREE.MeshStandardMaterial({color:0xffa000,emissive:0xff8a00,emissiveIntensity:0});const b=cyl(0.15,0.15,0.2,bm,0,2.7,1.85,g,12);
+ scene.add(g);return {g,bm};}
+const teams=[{id:'A',home:'KO',freeAt:0,job:null},{id:'B',home:'PR',freeAt:0,job:null}];
+teams.forEach(t=>{t.truck=makeTruck();const w=makeCharacter('m',{helm:0xf2c230,shirt:0x3b6d11,skin:0xb97a55});t.worker=w;scene.add(w.grp);parkTeam(t);});
+function parkTeam(t){const X=STA[t.home].x;t.truck.g.position.set(X+6,0,16.5);t.truck.g.rotation.y=Math.PI/2;t.worker.grp.position.set(X+8,0,13.5);t.worker.grp.rotation.y=0;t.truck.bm.emissiveIntensity=0;t.atJob=false;t.atJobId=null;}
+function placeTeamAtJob(t,tf){t.atJobId=tf.id;t.truck.g.position.set(tf.cx-1.5,0,tf.cz+7.5);t.truck.g.rotation.y=Math.PI/2;t.worker.grp.position.set(tf.cx+1.8,0,tf.cz+3.6);t.worker.grp.rotation.y=Math.PI;t.atJob=true;}
+
+/* ---------- Player ---------- */
+const player={pos:new THREE.Vector3(-50,0,27),yaw:0,pitch:-0.05,third:false,walkT:0};
+let playerChar=null;
+const fpArm=new THREE.Group();camera.add(fpArm);
+const fpSleeve=box(0.13,0.13,0.55,M(0xff8c1a),0.3,-0.3,-0.42,fpArm,false);
+const fpRefl=box(0.135,0.03,0.135,M(0xf4f4ee,{emissive:0x444444}),0.3,-0.3,-0.3,fpArm,false);
+const fpHandM=M(0xf0b49a);box(0.11,0.11,0.14,fpHandM,0.3,-0.3,-0.74,fpArm,false);
+box(0.22,0.14,0.03,darkM,0.24,-0.22,-0.8,fpArm,false);
+box(0.19,0.11,0.01,new THREE.MeshBasicMaterial({color:0x5dcaa5}),0.24,-0.22,-0.784,fpArm,false);
+fpArm.children.forEach(c=>{c.renderOrder=10;});fpArm.scale.set(0.6,0.6,0.6);fpArm.position.x=0.06;
+
+/* ================= GAME STATE ================= */
+let state='select',gender='f',playerName='';
+let gameH=8,speed=1,budget=5000000,uiOpen=false,uiKind=null,tabletTab='ram',ramView='true';
+const stock={oltc:0,gasket:1,buchholz:0,fan:1,bushing:0,arrester:0};
+const events=[],forms=[];let formSeq=1;
+function logEv(text,type='info'){events.push({t:gameH,text,type});}
+function toast(msg,cls=''){const d=document.createElement('div');d.className='toast '+cls;d.textContent=msg;$('toasts').appendChild(d);setTimeout(()=>d.remove(),5200);}
+let audioCtx=null;
+function beep(n=3){try{audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();for(let i=0;i<n;i++){const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='square';o.frequency.value=880;g.gain.value=0.05;o.connect(g);g.connect(audioCtx.destination);const t0=audioCtx.currentTime+i*0.28;o.start(t0);o.stop(t0+0.16);}}catch(e){}}
+function pickFault(){const tot=FAULTS.reduce((a,f)=>a+f.w,0);let r=Math.random()*tot;for(const f of FAULTS){r-=f.w;if(r<=0)return f;}return FAULTS[0];}
+
+function updateTfVisual(tf){
+ const col=tf.status==='ok'?'#97c459':tf.status==='fault'?'#e24b4a':'#fac775';
+ const sub=tf.status==='ok'?'ปกติ · จ่ายไฟ':tf.status==='fault'?'ขัดข้อง · รอสั่งซ่อม':(gameH<tf.repairStart?'รอทีมช่าง':'กำลังซ่อม');
+ drawLabel(tf.label,tf.id,sub,col);
+ tf.lampM.color.set(tf.status==='ok'?0x2a8a3a:tf.status==='fault'?0x8a1a1a:0x8a6a10);
+ tf.lampM.emissive.set(tf.status==='ok'?0x39d353:tf.status==='fault'?0xff2a2a:0xffb020);
+ tf.puddle.visible=tf.status!=='ok'&&tf.fault&&tf.fault.k==='leak';
+}
+function failTf(tf){
+ const f=pickFault();tf.status='fault';tf.fault=f;tf.failAt=gameH;tf.fails++;tf.wrongDiag=false;tf.diagnosedName=null;
+ logEv(`${tf.id} สัญญาณเตือน: ${f.alarm}`,'bad');toast(`เหตุขัดข้องที่ ${tf.id} — ${f.alarm}`,'bad');beep();updateTfVisual(tf);
+}
+function restoreTf(tf){
+ const dur=gameH-tf.failAt;tf.downDone+=dur;tf.repairs++;
+ forms.push({id:formSeq++,tf:tf.id,trueStart:tf.failAt,trueEnd:gameH,trueCause:tf.fault.name,created:gameH,submitted:false,auto:false,rec:null,accurate:false,flag:false});
+ logEv(`${tf.id} ซ่อมเสร็จ กลับมาจ่ายไฟ (Energized)`,'good');
+ toast(`${tf.id} กลับมาจ่ายไฟแล้ว · อย่าลืมกรอกใบ FM-OPR-06-01`,'good');
+ const t=teams.find(t=>t.job===tf.id);if(t&&t.freeAt<=gameH+0.01){t.job=null;parkTeam(t);}
+ tf.status='ok';tf.fault=null;tf.team=null;tf.nextFail=gameH+expRand(tf.mtbf);updateTfVisual(tf);
+}
+function stats(tf){
+ const T=Math.max(gameH,1);const down=tf.downDone+(tf.status!=='ok'?gameH-tf.failAt:0);
+ const up=T-down;const mtbf=tf.fails?up/tf.fails:null;const mttr=tf.repairs?tf.downDone/tf.repairs:null;
+ return {n:tf.fails,down,A:up/T,mtbf,mttr,R:mtbf?Math.exp(-720/mtbf):1,Mt:mttr?1-Math.exp(-24/mttr):null};
+}
+function recStats(tf){
+ const T=Math.max(gameH,1);const fs=forms.filter(f=>f.tf===tf.id&&f.submitted);const down=fs.reduce((a,f)=>a+Math.max(0,f.rec.end-f.rec.start),0);
+ const up=T-down;const n=fs.length;const mtbf=n?up/n:null;const mttr=n?down/n:null;
+ return {n,down,A:up/T,mtbf,mttr,R:mtbf?Math.exp(-720/mtbf):1,Mt:mttr&&mttr>0?1-Math.exp(-24/mttr):null};
+}
+
+/* ================= MODAL / UI ================= */
+function openModal(kind,html){uiOpen=true;uiKind=kind;$('mbox').innerHTML=html;$('modal').classList.remove('hidden');if(document.pointerLockElement)document.exitPointerLock();}
+function closeModal(){if(uiKind==='end')return;uiOpen=false;uiKind=null;$('modal').classList.add('hidden');}
+$('modal').addEventListener('click',e=>{if(e.target.id==='modal'&&uiKind!=='brief'&&uiKind!=='end')closeModal();});
+
+function nearestTf(){let best=null,bd=1e9;for(const tf of tfs){const nx=Math.max(tf.cx-3.75,Math.min(player.pos.x,tf.cx+3.75)),nz=Math.max(tf.cz-2.75,Math.min(player.pos.z,tf.cz+2.75));const d=Math.hypot(player.pos.x-nx,player.pos.z-nz);if(d<bd){bd=d;best=tf;}}return bd<2.4?best:null;}
+
+function openInspect(tf){
+ const st=stats(tf);const rd=tf.status==='ok'?NORMAL_READ:tf.fault.read;
+ let h=`<h2>หม้อแปลง ${tf.id} · ${tf.kv}</h2><p class="mut">${STA[tf.st].name} · ${fmtT(gameH)}</p>
+ <div class="read"><div>อุณหภูมิน้ำมัน<b>${rd.oil}°C</b></div><div>WTI ขดลวด<b>${rd.wti}°C</b></div><div>แรงดัน LV<b>${rd.v}</b></div><div>Buchholz<b>${rd.b}</b></div></div>`;
+ if(tf.status==='ok'){
+  h+=`<p class="ok">สถานะปกติ จ่ายไฟได้ตามปกติ</p><p class="mut">เสียสะสม ${st.n} ครั้ง · A = ${pct(st.A)} · MTBF ${st.mtbf?st.mtbf.toFixed(0)+' ชม.':'—'} · MTTR ${st.mttr?st.mttr.toFixed(1)+' ชม.':'—'}</p><div class="btnrow"><button onclick="closeModal()">ปิด</button></div>`;
+ }else if(tf.status==='repair'){
+  const prog=Math.max(0,Math.min(1,(gameH-tf.repairStart)/(tf.repairEnd-tf.repairStart)));
+  h+=`<p class="warn">ทีม ${tf.team} ${gameH<tf.repairStart?'อยู่ในคิว เริ่มงาน '+fmtT(tf.repairStart):'กำลังซ่อม'} · คาดว่าเสร็จ ${fmtT(tf.repairEnd)}</p><p class="mut">วินิจฉัยเป็น: ${tf.diagnosedName}</p><div class="prog"><i style="width:${prog*100}%"></i></div><div class="btnrow"><button onclick="closeModal()">ปิด</button></div>`;
+ }else{
+  const f=tf.fault;
+  const opts=[f,...FAULTS.filter(x=>x!==f).sort(()=>Math.random()-.5).slice(0,3)].sort(()=>Math.random()-.5);
+  h+=`<h3>อาการที่พบหน้างาน</h3><ul>${f.sym.map(s=>`<li>${s}</li>`).join('')}</ul>
+  <h3>1) วินิจฉัยสาเหตุ</h3>${opts.map(o=>`<label class="opt"><input type="radio" name="dg" value="${o.k}"><span>${o.name}<br><span class="mut" style="font-size:12px">อะไหล่: ${PARTS[o.part].name} · คงคลัง ${stock[o.part]} ชิ้น</span></span></label>`).join('')}
+  <h3>2) เลือกทีมช่าง</h3>${teams.map(t=>{const w=Math.max(0,t.freeAt-gameH);return `<label class="opt"><input type="radio" name="tm" value="${t.id}"><span>ทีม ${t.id} (ประจำ ${t.home}) — ${w>0?'<span class="warn">ว่างในอีก '+w.toFixed(0)+' ชม.</span>':'<span class="ok">ว่าง</span>'}</span></label>`;}).join('')}
+  <p class="mut" style="font-size:12px">ถ้าไม่มีอะไหล่ในคลัง ต้องสั่งด่วน ราคา 1.5 เท่า และรอของ ${LEAD_TIME} ชม. · วินิจฉัยผิด เวลาซ่อมเพิ่ม 60%</p>
+  <div class="err" id="dErr"></div><div class="btnrow"><button class="ghost" onclick="closeModal()">ยกเลิก</button><button class="gold" onclick="dispatch('${tf.id}')">ส่งทีมช่างซ่อม</button></div>`;
+ }
+ openModal('inspect',h);
+}
+window.dispatch=function(id){
+ const tf=tfs.find(t=>t.id===id);const dg=document.querySelector('input[name=dg]:checked'),tm=document.querySelector('input[name=tm]:checked');
+ if(!dg){$('dErr').textContent='เลือกสาเหตุที่วินิจฉัยก่อน';return;}
+ if(!tm){$('dErr').textContent='เลือกทีมช่างก่อน';return;}
+ const f=tf.fault,diag=FAULTS.find(x=>x.k===dg.value),team=teams.find(t=>t.id===tm.value);
+ const wrong=diag!==f;let cost=0,lead=0;
+ if(stock[f.part]>0){stock[f.part]--;}else{cost+=PARTS[f.part].price*1.5;lead=LEAD_TIME;}
+ const work=f.base*rand(0.85,1.2)*(wrong?1.6:1);
+ cost+=20000+work*1800+(wrong?40000:0);
+ const start=Math.max(gameH,team.freeAt)+2;const end=start+work+lead;
+ tf.status='repair';tf.repairStart=start;tf.repairEnd=end;tf.team=team.id;tf.wrongDiag=wrong;tf.diagnosedName=diag.name;
+ team.freeAt=end;team.job=tf.id;budget-=cost;
+ logEv(`${tf.id} ส่งทีม ${team.id} ซ่อม (วินิจฉัย: ${diag.name})`,'info');
+ toast(`ส่งทีม ${team.id} ไป ${tf.id} · ค่าใช้จ่าย ${baht(cost)}${lead?' · รออะไหล่ '+lead+' ชม.':''}`,lead?'bad':'');
+ if(wrong)setTimeout(()=>toast(`ช่างแจ้ง: ${tf.id} สาเหตุไม่ตรงที่วินิจฉัย ต้องตรวจซ้ำ`,'bad'),1500);
+ updateTfVisual(tf);closeModal();
+};
+
+function openTablet(tab){tabletTab=tab||tabletTab;openModal('tablet',tabletHTML());}
+function tabletHTML(){
+ const tb=[['ram','ค่า R/A/M'],['jobs','งานซ่อม'],['forms','ใบ FM-OPR-06-01'+(forms.some(f=>!f.submitted)?' ('+forms.filter(f=>!f.submitted).length+')':'')],['shop','คลังอะไหล่'],['log','บันทึกเหตุการณ์']];
+ let h=`<h2>แท็บเล็ตวิศวกร · RAM Insight</h2><p class="mut">${fmtT(gameH)} · เวลาหยุดระหว่างเปิดแท็บเล็ต</p><div class="tabs">${tb.map(([k,l])=>`<button class="${k===tabletTab?'on':''}" onclick="openTablet('${k}')">${l}</button>`).join('')}<button class="ghost" style="margin-left:auto" onclick="closeModal()">ปิด</button></div>`;
+ if(tabletTab==='ram'){
+  h+=`<div class="tabs"><button class="${ramView==='true'?'on':''}" onclick="ramView='true';openTablet()">ค่าจริงจากระบบ</button><button class="${ramView==='rec'?'on':''}" onclick="ramView='rec';openTablet()">ค่าตามใบบันทึก</button></div>
+  <div class="tw"><table><tr><th>หม้อแปลง</th><th>เสีย (ครั้ง)</th><th>MTBF (ชม.)</th><th>MTTR (ชม.)</th><th>A</th><th>R(30 วัน)</th><th>M(24 ชม.)</th></tr>`;
+  tfs.forEach(tf=>{const s=ramView==='true'?stats(tf):recStats(tf);h+=`<tr><td>${tf.id}</td><td>${s.n}</td><td>${s.mtbf?s.mtbf.toFixed(0):'—'}</td><td>${s.mttr!==null?s.mttr.toFixed(1):'—'}</td><td class="${s.A>=A_TARGET?'ok':'bad'}">${pct(s.A)}</td><td>${(s.R*100).toFixed(1)}%</td><td>${s.Mt!==null?(s.Mt*100).toFixed(1)+'%':'—'}</td></tr>`;});
+  h+=`</table></div><p class="mut" style="font-size:12px;margin-top:8px">คิดเฉพาะงาน [CM] · A = (เวลาทั้งหมด − เวลาหยุดจ่ายไฟ) / เวลาทั้งหมด · R(t) = e<sup>−t/MTBF</sup> · M(t) = 1 − e<sup>−t/MTTR</sup> · เป้าหมาย A ≥ 96%</p>`;
+ }else if(tabletTab==='jobs'){
+  const act=tfs.filter(t=>t.status!=='ok');
+  if(!act.length)h+=`<p class="ok">ไม่มีงานค้าง หม้อแปลงทุกลูกจ่ายไฟปกติ</p>`;
+  act.forEach(tf=>{h+=`<div class="card"><b>${tf.id}</b> · ${STA[tf.st].code} · ${tf.status==='fault'?'<span class="bad">รอวินิจฉัย/สั่งซ่อม — ต้องไปตรวจหน้างาน</span>':'<span class="warn">ทีม '+tf.team+' · เสร็จประมาณ '+fmtT(tf.repairEnd)+'</span>'}<br><span class="mut">ขัดข้องเมื่อ ${fmtT(tf.failAt)} · หยุดจ่ายไฟมาแล้ว ${(gameH-tf.failAt).toFixed(1)} ชม.</span></div>`;});
+  h+=`<h3>ทีมช่าง</h3>`+teams.map(t=>`<p>ทีม ${t.id} (ประจำ ${t.home}) — ${t.freeAt>gameH?'ไม่ว่าง ถึง '+fmtT(t.freeAt):'ว่าง'}</p>`).join('');
+ }else if(tabletTab==='forms'){
+  const pend=forms.filter(f=>!f.submitted);
+  if(!pend.length)h+=`<p class="ok">ไม่มีใบบันทึกค้าง</p>`;
+  const causes=FAULTS.map(f=>f.name).concat(['ไม่ระบุ']);
+  pend.forEach(f=>{const left=f.created+FORM_DEADLINE-gameH;
+   h+=`<div class="card"><b>ใบ FM-OPR-06-01 #${f.id}</b> · ${f.tf} · ประเภทงาน [CM] <span class="${left<48?'bad':'warn'}">· ต้องส่งภายใน ${(left/24).toFixed(1)} วัน</span>
+   <p class="mut" style="font-size:12px">ดูเวลาจริงได้จากแท็บ "บันทึกเหตุการณ์" (เวลาสัญญาณเตือน = เริ่ม, เวลา Energized = สิ้นสุด)</p>
+   <div class="grid2" style="margin-top:8px"><div><label>วันที่เริ่ม (1–365)</label><input type="number" min="1" max="365" id="sd${f.id}"></div><div><label>เวลาเริ่ม</label><input type="time" id="st${f.id}"></div>
+   <div><label>วันที่สิ้นสุด</label><input type="number" min="1" max="365" id="ed${f.id}"></div><div><label>เวลาสิ้นสุด</label><input type="time" id="et${f.id}"></div>
+   <div style="grid-column:1/-1"><label>สาเหตุความเสียหาย</label><select id="cs${f.id}"><option value="">— เลือก —</option>${causes.map(c=>`<option>${c}</option>`).join('')}</select></div></div>
+   <div class="err" id="fe${f.id}"></div><div class="btnrow"><button class="gold" onclick="submitForm(${f.id})">ส่งใบบันทึก</button></div></div>`;});
+  const done=forms.filter(f=>f.submitted);
+  if(done.length){h+=`<h3>ส่งแล้ว</h3><div class="tw"><table><tr><th>#</th><th>หม้อแปลง</th><th>เริ่ม</th><th>สิ้นสุด</th><th>สาเหตุ</th><th>ตรวจสอบ</th></tr>`;
+   done.slice().reverse().forEach(f=>{h+=`<tr><td>${f.id}</td><td>${f.tf}</td><td>${fmtT(f.rec.start)}</td><td>${fmtT(f.rec.end)}</td><td>${f.rec.cause}</td><td class="${f.accurate?'ok':'bad'}">${f.accurate?'ถูกต้อง':(f.flag?'ติดธง from = to':'ไม่ตรงข้อมูลจริง')}${f.auto?' (ช่างกรอกแทน)':''}</td></tr>`;});h+=`</table></div>`;}
+ }else if(tabletTab==='shop'){
+  h+=`<p>งบคงเหลือ <b>${baht(budget)}</b> · ซื้อล่วงหน้าราคาปกติ ส่งถึงคลังทันที</p><div class="tw"><table><tr><th>อะไหล่</th><th>ราคา</th><th>คงคลัง</th><th></th></tr>`;
+  Object.entries(PARTS).forEach(([k,p])=>{h+=`<tr><td>${p.name}</td><td>${baht(p.price)}</td><td>${stock[k]}</td><td><button onclick="buy('${k}')">ซื้อ 1</button></td></tr>`;});
+  h+=`</table></div>`;
+ }else{
+  h+=`<div class="tw"><table><tr><th>เวลา</th><th>เหตุการณ์</th></tr>${events.slice().reverse().slice(0,80).map(e=>`<tr><td>${fmtT(e.t)}</td><td class="${e.type==='bad'?'bad':e.type==='good'?'ok':''}" style="white-space:normal">${e.text}</td></tr>`).join('')}</table></div>`;
+  if(!events.length)h+=`<p class="mut">ยังไม่มีเหตุการณ์</p>`;
+ }
+ return h;
+}
+window.openTablet=openTablet;window.closeModal=closeModal;
+window.buy=function(k){if(budget<PARTS[k].price){toast('งบไม่พอซื้ออะไหล่ชิ้นนี้','bad');return;}budget-=PARTS[k].price;stock[k]++;logEv(`ซื้อ ${PARTS[k].name} เข้าคลัง`);openTablet('shop');};
+window.submitForm=function(id){
+ const f=forms.find(x=>x.id===id);const g=k=>$(k+id).value;const e=$('fe'+id);
+ const sd=parseInt(g('sd'),10),ed=parseInt(g('ed'),10),st=g('st'),et=g('et'),cs=g('cs');
+ if(!sd||!ed||!st||!et||!cs){e.textContent='กรอกให้ครบทุกช่อง';return;}
+ if(sd<1||sd>365||ed<1||ed>365){e.textContent='วันที่ต้องอยู่ระหว่าง 1–365';return;}
+ const toH=(d,t)=>{const [hh,mm]=t.split(':').map(Number);return (d-1)*24+hh+mm/60;};
+ const s=toH(sd,st),en=toH(ed,et);
+ if(en<s){e.textContent='เวลาสิ้นสุดต้องไม่อยู่ก่อนเวลาเริ่ม';return;}
+ f.rec={start:s,end:en,cause:cs};f.submitted=true;f.flag=Math.abs(en-s)<0.01;
+ f.accurate=Math.abs(s-f.trueStart)<=0.5&&Math.abs(en-f.trueEnd)<=0.5&&cs===f.trueCause;
+ logEv(`ส่งใบ FM-OPR-06-01 #${f.id} (${f.tf})`);toast(f.accurate?`ใบ #${f.id} ข้อมูลถูกต้อง`:`ใบ #${f.id} ข้อมูลไม่ตรงกับเหตุการณ์จริง`,f.accurate?'good':'bad');openTablet('forms');
+};
+
+function showBrief(){
+ openModal('brief',`<h2>สวัสดี${playerName?' '+playerName:''} — วิศวกรประจำสถานี</h2>
+ <p>คุณรับผิดชอบหม้อแปลง 6 ลูก ที่<b>สถานีคอต่อ (KO)</b> 3 ลูก และ<b>สถานีแพรกษา (PR)</b> 3 ลูก เป็นเวลา 1 ปี (ประมาณ 20 นาทีในเกม)</p>
+ <h3>เป้าหมาย</h3><ul><li>รักษา Availability ของหม้อแปลง<b>ทุกลูก ≥ 96%</b></li><li>บันทึกใบ FM-OPR-06-01 ให้ถูกต้องภายใน 7 วันหลังซ่อมเสร็จ ถ้าไม่ส่ง ช่างจะกรอกแทนแบบลวก ๆ (from = to) และค่า R/A/M ที่รายงานจะคลาดเคลื่อน</li><li>ใช้งบประมาณ ${baht(budget)} ให้พอทั้งปี</li></ul>
+ <h3>เมื่อเกิดเหตุขัดข้อง</h3><ul><li>เวลาในเกมจะเดินช้าลงจนกว่าจะสั่งซ่อม</li><li>เดินไปที่หม้อแปลงไฟแดง กด <b>E</b> ดูอาการ วินิจฉัยสาเหตุ แล้วส่งทีมช่าง</li><li>มีอะไหล่ในคลัง = ซ่อมเร็ว · ไม่มี = รอของ ${LEAD_TIME} ชม. ราคาแพงขึ้น</li></ul>
+ <h3>การควบคุม</h3><p>${isTouch?'จอยซ้ายเดิน · ลากจอขวาหันมอง · ปุ่ม ตรวจ / แท็บเล็ต / มุมมอง / ย้ายสถานี':'WASD เดิน · Shift วิ่ง · คลิกจอเพื่อใช้เมาส์หันมอง · E ตรวจ · Tab แท็บเล็ต · V สลับมุมมอง · M ย้ายสถานี · P หยุดเวลา'}</p>
+ <div class="btnrow"><button class="gold" onclick="beginShift()">เริ่มงาน</button></div>`);
+}
+window.beginShift=function(){uiOpen=false;uiKind=null;$('modal').classList.add('hidden');logEv('เริ่มกะงาน ปีงบประมาณใหม่');if(!isTouch)canvas.requestPointerLock();};
+
+function endGame(){
+ state='end';if(document.pointerLockElement)document.exitPointerLock();
+ forms.forEach(f=>{if(!f.submitted){f.submitted=true;f.auto=true;f.rec={start:f.trueEnd,end:f.trueEnd,cause:'ไม่ระบุ'};f.flag=true;f.accurate=false;}});
+ const rows=tfs.map(tf=>({tf,s:stats(tf),r:recStats(tf)}));
+ const pass=rows.filter(x=>x.s.A>=A_TARGET).length;
+ const acc=forms.length?forms.filter(f=>f.accurate).length/forms.length:1;
+ const score=pass/6*50+acc*30+(budget>=0?20:Math.max(0,20+budget/100000));
+ const grade=score>=90?'A':score>=75?'B':score>=60?'C':'D';
+ const gap=rows.reduce((a,x)=>a+Math.abs(x.r.A-x.s.A),0)/6;
+ player.third=true;
+ uiOpen=true;uiKind='end';$('modal').classList.remove('hidden');
+ $('mbox').innerHTML=`<div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap"><div class="grade">${grade}</div><div><h2>สรุปผลงานประจำปี</h2><p class="mut">${playerName||'วิศวกร'} · ${gender==='f'?'วิศวกรหญิง':'วิศวกรชาย'} · คะแนน ${score.toFixed(0)}/100</p></div></div>
+ <h3>Availability รายลูก (เป้า ≥ 96%)</h3><div class="tw"><table><tr><th>หม้อแปลง</th><th>เสีย</th><th>MTBF</th><th>MTTR</th><th>A จริง</th><th>A ตามใบบันทึก</th><th>ผล</th></tr>
+ ${rows.map(x=>`<tr><td>${x.tf.id}</td><td>${x.s.n}</td><td>${x.s.mtbf?x.s.mtbf.toFixed(0):'—'}</td><td>${x.s.mttr?x.s.mttr.toFixed(1):'—'}</td><td>${pct(x.s.A)}</td><td>${pct(x.r.A)}</td><td class="${x.s.A>=A_TARGET?'ok':'bad'}">${x.s.A>=A_TARGET?'ผ่าน':'ไม่ผ่าน'}</td></tr>`).join('')}</table></div>
+ <h3>คุณภาพข้อมูล</h3><p>ใบ FM-OPR-06-01 ถูกต้อง ${forms.filter(f=>f.accurate).length} จาก ${forms.length} ใบ (${(acc*100).toFixed(0)}%) · ค่า A ที่รายงานต่างจากค่าจริงเฉลี่ย ${(gap*100).toFixed(2)} จุด</p>
+ <p class="mut">${acc<1?'ข้อมูลที่บันทึกไม่ครบทำให้ RAM Insight มองเห็นหม้อแปลงดีกว่าความจริง — นี่คือเหตุผลที่ช่างหน้างานต้องบันทึกให้ถูกต้อง':'ข้อมูลครบและตรง ค่า R/A/M ที่รายงานสะท้อนความจริงของหม้อแปลง'}</p>
+ <h3>งบประมาณ</h3><p>คงเหลือ <b class="${budget>=0?'ok':'bad'}">${baht(budget)}</b></p>
+ <div class="btnrow"><button class="gold" onclick="location.reload()">เล่นใหม่</button></div>`;
+}
+
+/* ================= INPUT ================= */
+const keys={};
+addEventListener('keydown',e=>{
+ const tag=(e.target.tagName||'').toLowerCase();
+ if(e.key==='Escape'){if(uiOpen&&uiKind!=='brief')closeModal();return;}
+ if(tag==='input'||tag==='select')return;
+ if(state!=='play')return;
+ if(e.key==='Tab'){e.preventDefault();if(uiKind==='tablet')closeModal();else if(!uiOpen)openTablet();return;}
+ keys[e.code]=true;
+ if(uiOpen)return;
+ if(e.code==='KeyE'){const tf=nearestTf();if(tf)openInspect(tf);}
+ if(e.code==='KeyV')player.third=!player.third;
+ if(e.code==='KeyM')switchStation();
+ if(e.code==='KeyP')setSpeed(speed===0?1:0);
+});
+addEventListener('keyup',e=>{keys[e.code]=false;});
+canvas.addEventListener('click',()=>{if(state==='play'&&!uiOpen&&!isTouch&&!document.pointerLockElement)canvas.requestPointerLock();});
+addEventListener('mousemove',e=>{if(document.pointerLockElement===canvas&&!uiOpen){player.yaw-=e.movementX*0.0022;player.pitch=Math.max(-1.3,Math.min(1.2,player.pitch-e.movementY*0.0022));}});
+function setSpeed(s){speed=s;document.querySelectorAll('#speed button').forEach(b=>b.classList.toggle('on',+b.dataset.s===s));}
+document.querySelectorAll('#speed button').forEach(b=>b.addEventListener('click',()=>setSpeed(+b.dataset.s)));
+function switchStation(){const cur=player.pos.x<0?'KO':'PR',to=cur==='KO'?'PR':'KO';player.pos.set(STA[to].x,0,27);player.yaw=0;gameH+=1;toast(`ขับรถไป${STA[to].name} (ใช้เวลา 1 ชม.)`);}
+// touch
+let joyId=null,joyV={x:0,y:0},lookId=null,lookLast=null;
+const joy=$('joy'),knob=$('knob');
+joy.addEventListener('touchstart',e=>{e.preventDefault();const t=e.changedTouches[0];joyId=t.identifier;moveJoy(t);},{passive:false});
+function moveJoy(t){const r=joy.getBoundingClientRect();let dx=t.clientX-(r.left+60),dy=t.clientY-(r.top+60);const d=Math.hypot(dx,dy);if(d>50){dx*=50/d;dy*=50/d;}knob.style.left=(35+dx)+'px';knob.style.top=(35+dy)+'px';joyV={x:dx/50,y:dy/50};}
+addEventListener('touchmove',e=>{for(const t of e.changedTouches){if(t.identifier===joyId)moveJoy(t);else if(t.identifier===lookId&&!uiOpen){player.yaw-=(t.clientX-lookLast.x)*0.006;player.pitch=Math.max(-1.3,Math.min(1.2,player.pitch-(t.clientY-lookLast.y)*0.006));lookLast={x:t.clientX,y:t.clientY};}}},{passive:true});
+addEventListener('touchend',e=>{for(const t of e.changedTouches){if(t.identifier===joyId){joyId=null;joyV={x:0,y:0};knob.style.left='35px';knob.style.top='35px';}if(t.identifier===lookId)lookId=null;}});
+canvas.addEventListener('touchstart',e=>{for(const t of e.changedTouches){if(t.clientX>innerWidth*0.35&&lookId===null){lookId=t.identifier;lookLast={x:t.clientX,y:t.clientY};}}},{passive:true});
+$('bE').onclick=()=>{if(uiOpen)return;const tf=nearestTf();if(tf)openInspect(tf);else toast('เดินเข้าไปใกล้หม้อแปลงก่อน');};
+$('bTab').onclick=()=>{if(!uiOpen)openTablet();};
+$('bV').onclick=()=>{player.third=!player.third;};
+$('bM').onclick=()=>{if(!uiOpen)switchStation();};
+
+/* ---------- Select screen ---------- */
+function pickGender(g){gender=g;$('pickF').classList.toggle('on',g==='f');$('pickM').classList.toggle('on',g==='m');}
+$('pickF').onclick=()=>pickGender('f');$('pickM').onclick=()=>pickGender('m');
+$('startBtn').onclick=()=>{
+ playerName=$('selName').value.trim();
+ playerChar=makeCharacter(gender);scene.add(playerChar.grp);
+ const skin=gender==='f'?0xf0b49a:0xc98a64;fpHandM.color.set(skin);
+ tfs.forEach(tf=>{tf.nextFail=gameH+expRand(tf.mtbf)*0.6+24;updateTfVisual(tf);});
+ $('select').classList.add('hidden');$('hud').classList.remove('hidden');
+ if(isTouch){$('joy').classList.remove('hidden');$('mbtns').classList.remove('hidden');}
+ state='play';showBrief();
+};
+
+/* ================= HUD ================= */
+let hudT=0;
+function updateHUD(){
+ $('hDate').textContent=fmtT(gameH);
+ const cur=player.pos.x<0?'KO':'PR';$('hSta').textContent=`${STA[cur].name} (${cur})`;
+ $('hBud').textContent=baht(budget);$('hBud').style.color=budget<0?'#f09595':'';
+ $('hTeam').textContent=teams.map(t=>`ทีม ${t.id} ${t.freeAt>gameH?'ไม่ว่าง':'ว่าง'}`).join(' · ')+' · ใบค้าง '+forms.filter(f=>!f.submitted).length;
+ $('avail').innerHTML='<b>Availability (เป้า 96%)</b>'+tfs.map(tf=>{const a=stats(tf).A;const c=a>=0.98?'#97c459':a>=A_TARGET?'#ef9f27':'#e24b4a';const w=Math.max(0,Math.min(1,(a-0.9)/0.1));const dot=tf.status==='ok'?'':tf.status==='fault'?' <span class="bad">●</span>':' <span class="warn">●</span>';
+  return `<div class="row"><span style="width:30px">${tf.id}</span><div class="bar"><i style="width:${w*100}%;background:${c}"></i></div><span style="width:52px;text-align:right">${(a*100).toFixed(1)}%</span>${dot}</div>`;}).join('');
+ const pend=tfs.filter(t=>t.status==='fault');
+ if(pend.length){$('alert').classList.remove('hidden');$('alert').textContent=`เหตุขัดข้อง: ${pend.map(t=>t.id+' ('+t.fault.alarm+')').join(', ')} · เวลาเดินช้าลงจนกว่าจะสั่งซ่อม`;}else $('alert').classList.add('hidden');
+}
+
+/* ================= LOOP ================= */
+const clock=new THREE.Clock();
+let blink=0;
+function tick(){
+ requestAnimationFrame(tick);
+ const dt=Math.min(clock.getDelta(),0.1);blink+=dt;
+ if(state==='select'){
+  selF.grp.rotation.y+=dt*(gender==='f'?1.2:0.25);selMch.grp.rotation.y+=dt*(gender==='m'?1.2:0.25);
+  rings.f.visible=gender==='f';rings.m.visible=gender==='m';
+  renderer.render(selScene,selCam);return;
+ }
+ // time
+ if(state==='play'&&!uiOpen){
+  const slow=tfs.some(t=>t.status==='fault')?0.2:1;
+  gameH=Math.min(YEAR,gameH+dt*HOURS_PER_SEC*speed*slow);
+  for(const tf of tfs){if(gameH>=YEAR)break;
+   if(tf.status==='ok'&&gameH>=tf.nextFail)failTf(tf);
+   else if(tf.status==='repair'&&gameH>=tf.repairEnd)restoreTf(tf);
+  }
+  teams.forEach(t=>{if(t.job){const tf=tfs.find(x=>x.id===t.job);if(tf&&tf.status==='repair'&&gameH>=tf.repairStart&&t.atJobId!==tf.id)placeTeamAtJob(t,tf);if(!tf||tf.status!=='repair'||tf.team!==t.id){if(t.freeAt<=gameH){t.job=null;parkTeam(t);}}}});
+  forms.forEach(f=>{if(!f.submitted&&gameH-f.created>FORM_DEADLINE){f.submitted=true;f.auto=true;f.rec={start:f.trueEnd,end:f.trueEnd,cause:'ไม่ระบุ'};f.flag=true;f.accurate=false;logEv(`ใบ #${f.id} (${f.tf}) เกินกำหนด ช่างกรอกแทน: from = to, สาเหตุไม่ระบุ`,'bad');toast(`ใบ #${f.id} เกินกำหนด — ข้อมูลถูกบันทึกแบบไม่สมบูรณ์`,'bad');}});
+  if(gameH>=YEAR&&state==='play'){gameH=YEAR;endGame();}
+ }
+ // movement
+ const p=player;let moving=false;
+ if(state==='play'&&!uiOpen){
+  let f=0,s=0;if(keys.KeyW||keys.ArrowUp)f+=1;if(keys.KeyS||keys.ArrowDown)f-=1;if(keys.KeyA||keys.ArrowLeft)s-=1;if(keys.KeyD||keys.ArrowRight)s+=1;
+  f-=joyV.y;s+=joyV.x;
+  const len=Math.hypot(f,s);if(len>0.05){moving=true;const sp=(keys.ShiftLeft||keys.ShiftRight||len>0.95&&isTouch?6.5:3.6)*Math.min(1,len);f/=Math.max(1,len);s/=Math.max(1,len);
+   const fx=-Math.sin(p.yaw),fz=-Math.cos(p.yaw);p.pos.x+=(fx*f+(-fz)*s)*sp*dt;p.pos.z+=(fz*f+fx*s)*sp*dt;
+   collide(p.pos);p.pos.x=Math.max(-112,Math.min(112,p.pos.x));p.pos.z=Math.max(-62,Math.min(70,p.pos.z));p.walkT+=dt*sp*2.2;}
+ }
+ if(playerChar){
+  const c=playerChar;c.grp.position.copy(p.pos);c.grp.rotation.y=p.yaw+Math.PI;const sw=moving?Math.sin(p.walkT)*0.6:0;
+  c.legL.rotation.x=sw;c.legR.rotation.x=-sw;c.armL.rotation.x=-sw*0.8;c.armR.rotation.x=sw*0.8;
+  c.grp.visible=p.third||state==='end';fpArm.visible=!p.third&&state==='play';
+  fpArm.position.y=-0.02+(moving?Math.abs(Math.sin(p.walkT))*0.012:0);
+ }
+ if(state==='end'){const a=blink*0.25;camera.position.set(p.pos.x+Math.sin(a)*5,2.6,p.pos.z+Math.cos(a)*5);camera.lookAt(p.pos.x,1.3,p.pos.z);}
+ else if(p.third){const fx=-Math.sin(p.yaw),fz=-Math.cos(p.yaw);camera.position.set(p.pos.x-fx*4.2,p.pos.y+2.4-p.pitch*1.5,p.pos.z-fz*4.2);camera.rotation.set(p.pitch*0.6-0.2,p.yaw,0);}
+ else{camera.position.set(p.pos.x,1.65,p.pos.z);camera.rotation.set(p.pitch,p.yaw,0);}
+ // day/night
+ const hd=gameH%24,sunUp=Math.max(0,Math.sin((hd-6)/12*Math.PI));
+ const sky=skyNight.clone().lerp(skyDay,sunUp);if(sunUp>0&&sunUp<0.35)sky.lerp(skyDusk,(0.35-sunUp)*1.2);
+ scene.background.copy(sky);scene.fog.color.copy(sky);
+ sun.intensity=0.15+0.95*sunUp;hemi.intensity=0.35+0.4*sunUp;
+ const ang=(hd-6)/12*Math.PI;sun.position.set(Math.cos(ang)*80,20+Math.max(0,Math.sin(ang))*80,40);
+ lamps.forEach(l=>l.material.emissiveIntensity=sunUp<0.15?1.5:0);
+ // transformer fx
+ for(const tf of tfs){
+  if(tf.status==='fault')tf.lampM.emissiveIntensity=(Math.sin(blink*8)>0)?1.6:0.15;else tf.lampM.emissiveIntensity=1;
+  const spin=tf.status==='ok';tf.fans.forEach(f=>{if(spin)f.rotation.x+=dt*14;});
+  if(tf.status!=='ok'&&tf.fault&&tf.fault.smoke&&gameH<tf.repairEnd+1){tf.smokeT+=dt;if(tf.smokeT>0.18&&(tf.status==='fault'||gameH<tf.repairStart+3)){tf.smokeT=0;spawnPuff(tf);}}
+ }
+ for(let i=puffs.length-1;i>=0;i--){const q=puffs[i];q.life+=dt;q.sp.position.y+=dt*1.3;q.sp.position.x+=dt*0.4;const sc=1+q.life*1.2;q.sp.scale.set(sc,sc,1);q.sp.material.opacity=Math.max(0,0.8-q.life*0.27);if(q.life>3){scene.remove(q.sp);q.sp.material.dispose();puffs.splice(i,1);}}
+ teams.forEach(t=>{t.truck.bm.emissiveIntensity=t.atJob&&Math.sin(blink*10)>0?2:0;const w=t.worker;if(t.atJob){w.armR.rotation.x=-1.2+Math.sin(blink*6)*0.4;w.armL.rotation.x=-0.6;}else{w.armR.rotation.x=0;w.armL.rotation.x=0;}});
+ // prompt
+ if(state==='play'&&!uiOpen){const tf=nearestTf();if(tf){$('prompt').classList.remove('hidden');$('prompt').innerHTML=`<b>${isTouch?'ตรวจ':'E'}</b>ตรวจหม้อแปลง ${tf.id}`;}else $('prompt').classList.add('hidden');}
+ else $('prompt').classList.add('hidden');
+ hudT+=dt;if(hudT>0.25&&state!=='select'){hudT=0;updateHUD();}
+ renderer.render(scene,camera);
+}
+function collide(q){const r=0.4;for(const b of colliders){const nx=Math.max(b.x1,Math.min(q.x,b.x2)),nz=Math.max(b.z1,Math.min(q.z,b.z2));const dx=q.x-nx,dz=q.z-nz,d2=dx*dx+dz*dz;
+ if(d2<r*r){if(d2>1e-8){const d=Math.sqrt(d2);q.x=nx+dx/d*r;q.z=nz+dz/d*r;}else{const l=q.x-b.x1,R=b.x2-q.x,t=q.z-b.z1,B=b.z2-q.z,m=Math.min(l,R,t,B);if(m===l)q.x=b.x1-r;else if(m===R)q.x=b.x2+r;else if(m===t)q.z=b.z1-r;else q.z=b.z2+r;}}}}
+
+addEventListener('resize',()=>{renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();fitSelCam();});
+function redrawSigns(){scene.traverse(o=>{if(o.userData&&o.userData.draw){const x=o.userData.c.getContext('2d');x.clearRect(0,0,o.userData.c.width,o.userData.c.height);o.userData.draw(x,o.userData.c.width,o.userData.c.height);o.userData.t.needsUpdate=true;}});tfs.forEach(updateTfVisual);}
+tfs.forEach(updateTfVisual);
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(redrawSigns);
+tick();
+</script>
+</body>
+</html>
